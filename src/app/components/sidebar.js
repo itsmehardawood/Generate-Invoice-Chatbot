@@ -4,11 +4,11 @@ import { useState } from 'react';
 
 const Sidebar = () => {
   const [chats, setChats] = useState([
-    { id: 1, title: 'Understanding React Hooks', date: 'Yesterday' },
-    { id: 2, title: 'Next.js App Router Guide', date: '2 days ago' },
-    { id: 3, title: 'Tailwind CSS Best Practices', date: '1 week ago' },
-    { id: 4, title: 'API Route Implementation', date: '2 weeks ago' },
-    { id: 5, title: 'Deployment Strategies', date: '3 weeks ago' },
+    { id: 1, title: 'Monthly Service Invoice', date: 'Yesterday', type: 'invoice' },
+    { id: 2, title: 'Web Development Project', date: '2 days ago', type: 'estimate' },
+    { id: 3, title: 'Logo Design Invoice', date: '1 week ago', type: 'invoice' },
+    { id: 4, title: 'SEO Services Quote', date: '2 weeks ago', type: 'quote' },
+    { id: 5, title: 'Consulting Invoice', date: '3 weeks ago', type: 'invoice' },
   ]);
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,8 +21,9 @@ const Sidebar = () => {
   const handleNewChat = () => {
     const newChat = {
       id: chats.length + 1,
-      title: `New Conversation ${chats.length + 1}`,
-      date: 'Just now'
+      title: `New Invoice ${chats.length + 1}`,
+      date: 'Just now',
+      type: 'invoice'
     };
     setChats([newChat, ...chats]);
   };
@@ -39,7 +40,7 @@ const Sidebar = () => {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
             </svg>
-            <span>New chat</span>
+            <span>New Invoice</span>
           </button>
         )}
         {isCollapsed && (
@@ -65,7 +66,7 @@ const Sidebar = () => {
             </div>
             <input
               type="text"
-              placeholder="Search chat history..."
+              placeholder="Search invoices..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -86,9 +87,10 @@ const Sidebar = () => {
                   className="w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between text-gray-300 hover:bg-gray-800"
                 >
                   <span className="truncate flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clipRule="evenodd" />
-                    </svg>
+                    <div className={`h-3 w-3 rounded-full mr-2 flex-shrink-0 ${
+                      chat.type === 'invoice' ? 'bg-green-400' : 
+                      chat.type === 'estimate' ? 'bg-blue-400' : 'bg-yellow-400'
+                    }`}></div>
                     {chat.title}
                   </span>
                 </button>
@@ -103,9 +105,10 @@ const Sidebar = () => {
                   className="w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between text-gray-300 hover:bg-gray-800"
                 >
                   <span className="truncate flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clipRule="evenodd" />
-                    </svg>
+                    <div className={`h-3 w-3 rounded-full mr-2 flex-shrink-0 ${
+                      chat.type === 'invoice' ? 'bg-green-400' : 
+                      chat.type === 'estimate' ? 'bg-blue-400' : 'bg-yellow-400'
+                    }`}></div>
                     {chat.title}
                   </span>
                 </button>
@@ -120,9 +123,10 @@ const Sidebar = () => {
                   className="w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between text-gray-300 hover:bg-gray-800"
                 >
                   <span className="truncate flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clipRule="evenodd" />
-                    </svg>
+                    <div className={`h-3 w-3 rounded-full mr-2 flex-shrink-0 ${
+                      chat.type === 'invoice' ? 'bg-green-400' : 
+                      chat.type === 'estimate' ? 'bg-blue-400' : 'bg-yellow-400'
+                    }`}></div>
                     {chat.title}
                   </span>
                 </button>
@@ -141,8 +145,8 @@ const Sidebar = () => {
                 <span className="text-white text-sm font-semibold">JD</span>
               </div>
               <div>
-                <p className="text-sm font-medium">John Doe</p>
-                <p className="text-xs text-gray-400">Free Account</p>
+                <p className="text-sm font-medium">Business User</p>
+                <p className="text-xs text-gray-400">Pro Account</p>
               </div>
             </div>
             <button 
