@@ -676,7 +676,7 @@ const ChatWindow = () => {
                 AI-powered invoice creation with FastAPI backend
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-500">
-                Simply describe what you need to invoice and I'll find matching products
+                Simply describe what you need to invoice and I will find matching products
               </p>
             </div>
             
