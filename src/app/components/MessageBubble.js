@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import ProductSelection from './ProductSelection';
-import InvoiceCard from './InvoiceCard';
 
 // Inline InvoicePreview component to avoid import issues
 const InlineInvoicePreview = ({ invoiceData, onUpdate, onFinalize, isOffline = false }) => {
@@ -43,7 +42,7 @@ const InlineInvoicePreview = ({ invoiceData, onUpdate, onFinalize, isOffline = f
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Invoice Preview</h2>
         <div className="flex gap-2">
-          <button
+          {/* <button
             onClick={() => onUpdate?.(formData)}
             disabled={isOffline}
             className={`px-4 py-2 rounded-lg transition-colors text-sm ${
@@ -53,7 +52,7 @@ const InlineInvoicePreview = ({ invoiceData, onUpdate, onFinalize, isOffline = f
             }`}
           >
             Save Changes
-          </button>
+          </button> */}
           <button
             onClick={handleFinalize}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
@@ -227,7 +226,7 @@ const ProfessionalInvoice = ({ invoiceData, invoiceId, isOffline = false }) => {
   const data = invoiceData.data || invoiceData;
 
   return (
-    <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-2xl overflow-hidden">
+    <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-2xl overflow-hidden" data-invoice-id={`invoice-${invoiceId}`}>
       {/* Invoice Paper Effect */}
       <div className="bg-white p-8" style={{ fontFamily: 'Arial, sans-serif' }}>
         {/* Header */}
@@ -345,25 +344,412 @@ const ProfessionalInvoice = ({ invoiceData, invoiceId, isOffline = false }) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-center mt-8 gap-4">
+        <div className="flex justify-center mt-8 gap-4 print:hidden">
           <button
-            onClick={() => window.print()}
+            onClick={() => {
+              // Create a clean print view
+              const printWindow = window.open('', '_blank');
+              const invoiceContent = document.querySelector(`[data-invoice-id="invoice-${invoiceId}"]`);
+              
+              if (invoiceContent) {
+                printWindow.document.write(`
+                  <!DOCTYPE html>
+                  <html>
+                  <head>
+                    <title>Invoice INV-${invoiceId}</title>
+                    <style>
+                      @page {
+                        size: A4;
+                        margin: 0.5in;
+                      }
+                      body {
+                        font-family: Arial, sans-serif;
+                        line-height: 1.4;
+                        color: #000;
+                        background: white;
+                        margin: 0;
+                        padding: 0;
+                      }
+                      .invoice-container {
+                        max-width: 100%;
+                        background: white;
+                      }
+                      table {
+                        width: 100%;
+                        border-collapse: collapse;
+                      }
+                      th, td {
+                        border: 1px solid #ddd;
+                        padding: 8px;
+                        text-align: left;
+                      }
+                      th {
+                        background-color: #f5f5f5;
+                        font-weight: bold;
+                      }
+                      .text-right {
+                        text-align: right;
+                      }
+                      .text-center {
+                        text-align: center;
+                      }
+                      .header {
+                        display: flex;
+                        justify-content: space-between;
+                        margin-bottom: 30px;
+                      }
+                      .company-info {
+                        font-size: 12px;
+                      }
+                      .invoice-title {
+                        font-size: 24px;
+                        font-weight: bold;
+                        margin-bottom: 10px;
+                      }
+                      .section-title {
+                        font-size: 16px;
+                        font-weight: bold;
+                        margin: 20px 0 10px 0;
+                      }
+                      .totals-section {
+                        margin-top: 20px;
+                        display: flex;
+                        justify-content: flex-end;
+                      }
+                      .totals-table {
+                        width: 300px;
+                      }
+                      .notes-section {
+                        margin-top: 20px;
+                        padding: 15px;
+                        background-color: #f9f9f9;
+                        border-radius: 5px;
+                      }
+                      .footer {
+                        margin-top: 30px;
+                        text-align: center;
+                        font-size: 12px;
+                        color: #666;
+                        border-top: 1px solid #ddd;
+                        padding-top: 15px;
+                      }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="invoice-container">
+                      <div class="header">
+                        <div>
+                          <div class="invoice-title">INVOICE</div>
+                          <div class="company-info">
+                            <strong>GreenGen Energy Solutions</strong><br>
+                            123 Business Street<br>
+                            Business City, State 12345<br>
+                            Email: contact@greengen.com<br>
+                            Phone: +1 (555) 123-4567
+                          </div>
+                        </div>
+                        <div style="text-align: right;">
+                          <div><strong>Invoice #:</strong> INV-${invoiceId}</div>
+                          <div><strong>Date:</strong> ${formatDate(invoiceData.created_at)}</div>
+                          <div><strong>Status:</strong> ${invoiceData.status?.toUpperCase()}</div>
+                        </div>
+                      </div>
+                      
+                      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+                        <div>
+                          <div class="section-title">Bill To:</div>
+                          <strong>${data.recipient}</strong><br>
+                          ${data.building_site?.address || ''}<br>
+                          ${data.building_site?.city || ''}<br>
+                          ${data.building_site?.postal_code || ''}<br>
+                          ${data.building_site?.country || ''}
+                        </div>
+                        <div>
+                          <div class="section-title">Installation Address:</div>
+                          ${data.building_site?.address || ''}<br>
+                          ${data.building_site?.city || ''}<br>
+                          ${data.building_site?.postal_code || ''}<br>
+                          ${data.building_site?.country || ''}
+                        </div>
+                      </div>
+                      
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Description</th>
+                            <th class="text-center">Qty</th>
+                            <th class="text-right">Unit Price</th>
+                            <th class="text-right">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${data.products?.map(item => `
+                            <tr>
+                              <td>
+                                <strong>${item.name}</strong>
+                                ${item.description ? `<br><small>${item.description}</small>` : ''}
+                                ${item.climate_zone ? `<br><small style="color: #0066cc;">Climate Zone: ${item.climate_zone}</small>` : ''}
+                              </td>
+                              <td class="text-center">${item.quantity}</td>
+                              <td class="text-right">€${(item.unit_price || 0).toFixed(2)}</td>
+                              <td class="text-right"><strong>€${(item.total_price || 0).toFixed(2)}</strong></td>
+                            </tr>
+                          `).join('') || ''}
+                        </tbody>
+                      </table>
+                      
+                      <div class="totals-section">
+                        <table class="totals-table">
+                          <tr>
+                            <td>Subtotal:</td>
+                            <td class="text-right"><strong>€${(data.subtotal || 0).toFixed(2)}</strong></td>
+                          </tr>
+                          <tr>
+                            <td>Tax (${((data.tax_rate || 0) * 100).toFixed(1)}%):</td>
+                            <td class="text-right"><strong>€${(data.tax_amount || 0).toFixed(2)}</strong></td>
+                          </tr>
+                          <tr style="border-top: 2px solid #333;">
+                            <td><strong>Total Amount:</strong></td>
+                            <td class="text-right"><strong>€${(data.total_amount || 0).toFixed(2)}</strong></td>
+                          </tr>
+                        </table>
+                      </div>
+                      
+                      ${data.notes ? `
+                        <div class="notes-section">
+                          <div class="section-title">Notes:</div>
+                          <p>${data.notes}</p>
+                        </div>
+                      ` : ''}
+                      
+                      <div class="footer">
+                        <p>Thank you for your business!</p>
+                        <p>For questions about this invoice, please contact us at contact@greengen.com</p>
+                      </div>
+                    </div>
+                  </body>
+                  </html>
+                `);
+                printWindow.document.close();
+                printWindow.focus();
+                setTimeout(() => {
+                  printWindow.print();
+                  printWindow.close();
+                }, 250);
+              }
+            }}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Print Invoice
           </button>
           <button
-            onClick={() => {
-              // Create download link for invoice data
-              const element = document.createElement('a');
-              const file = new Blob([JSON.stringify(invoiceData, null, 2)], { type: 'application/json' });
-              element.href = URL.createObjectURL(file);
-              element.download = `invoice-${invoiceId}.json`;
-              element.click();
+            onClick={async () => {
+              try {
+                // Create HTML content for PDF generation
+                const htmlContent = `
+                  <!DOCTYPE html>
+                  <html>
+                  <head>
+                    <meta charset="utf-8">
+                    <title>Invoice INV-${invoiceId}</title>
+                    <style>
+                      @page {
+                        size: A4;
+                        margin: 0.5in;
+                      }
+                      body {
+                        font-family: Arial, sans-serif;
+                        line-height: 1.4;
+                        color: #000;
+                        background: white;
+                        margin: 0;
+                        padding: 0;
+                      }
+                      .invoice-container {
+                        max-width: 100%;
+                        background: white;
+                      }
+                      table {
+                        width: 100%;
+                        border-collapse: collapse;
+                      }
+                      th, td {
+                        border: 1px solid #ddd;
+                        padding: 8px;
+                        text-align: left;
+                      }
+                      th {
+                        background-color: #f5f5f5;
+                        font-weight: bold;
+                      }
+                      .text-right {
+                        text-align: right;
+                      }
+                      .text-center {
+                        text-align: center;
+                      }
+                      .header {
+                        display: flex;
+                        justify-content: space-between;
+                        margin-bottom: 30px;
+                      }
+                      .company-info {
+                        font-size: 12px;
+                      }
+                      .invoice-title {
+                        font-size: 24px;
+                        font-weight: bold;
+                        margin-bottom: 10px;
+                      }
+                      .section-title {
+                        font-size: 16px;
+                        font-weight: bold;
+                        margin: 20px 0 10px 0;
+                      }
+                      .totals-section {
+                        margin-top: 20px;
+                        display: flex;
+                        justify-content: flex-end;
+                      }
+                      .totals-table {
+                        width: 300px;
+                      }
+                      .notes-section {
+                        margin-top: 20px;
+                        padding: 15px;
+                        background-color: #f9f9f9;
+                        border-radius: 5px;
+                      }
+                      .footer {
+                        margin-top: 30px;
+                        text-align: center;
+                        font-size: 12px;
+                        color: #666;
+                        border-top: 1px solid #ddd;
+                        padding-top: 15px;
+                      }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="invoice-container">
+                      <div class="header">
+                        <div>
+                          <div class="invoice-title">INVOICE</div>
+                          <div class="company-info">
+                            <strong>GreenGen Energy Solutions</strong><br>
+                            123 Business Street<br>
+                            Business City, State 12345<br>
+                            Email: contact@greengen.com<br>
+                            Phone: +1 (555) 123-4567
+                          </div>
+                        </div>
+                        <div style="text-align: right;">
+                          <div><strong>Invoice #:</strong> INV-${invoiceId}</div>
+                          <div><strong>Date:</strong> ${formatDate(invoiceData.created_at)}</div>
+                          <div><strong>Status:</strong> ${invoiceData.status?.toUpperCase()}</div>
+                        </div>
+                      </div>
+                      
+                      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+                        <div>
+                          <div class="section-title">Bill To:</div>
+                          <strong>${data.recipient}</strong><br>
+                          ${data.building_site?.address || ''}<br>
+                          ${data.building_site?.city || ''}<br>
+                          ${data.building_site?.postal_code || ''}<br>
+                          ${data.building_site?.country || ''}
+                        </div>
+                        <div>
+                          <div class="section-title">Installation Address:</div>
+                          ${data.building_site?.address || ''}<br>
+                          ${data.building_site?.city || ''}<br>
+                          ${data.building_site?.postal_code || ''}<br>
+                          ${data.building_site?.country || ''}
+                        </div>
+                      </div>
+                      
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Description</th>
+                            <th class="text-center">Qty</th>
+                            <th class="text-right">Unit Price</th>
+                            <th class="text-right">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${data.products?.map(item => `
+                            <tr>
+                              <td>
+                                <strong>${item.name}</strong>
+                                ${item.description ? `<br><small>${item.description}</small>` : ''}
+                                ${item.climate_zone ? `<br><small style="color: #0066cc;">Climate Zone: ${item.climate_zone}</small>` : ''}
+                              </td>
+                              <td class="text-center">${item.quantity}</td>
+                              <td class="text-right">€${(item.unit_price || 0).toFixed(2)}</td>
+                              <td class="text-right"><strong>€${(item.total_price || 0).toFixed(2)}</strong></td>
+                            </tr>
+                          `).join('') || ''}
+                        </tbody>
+                      </table>
+                      
+                      <div class="totals-section">
+                        <table class="totals-table">
+                          <tr>
+                            <td>Subtotal:</td>
+                            <td class="text-right"><strong>€${(data.subtotal || 0).toFixed(2)}</strong></td>
+                          </tr>
+                          <tr>
+                            <td>Tax (${((data.tax_rate || 0) * 100).toFixed(1)}%):</td>
+                            <td class="text-right"><strong>€${(data.tax_amount || 0).toFixed(2)}</strong></td>
+                          </tr>
+                          <tr style="border-top: 2px solid #333;">
+                            <td><strong>Total Amount:</strong></td>
+                            <td class="text-right"><strong>€${(data.total_amount || 0).toFixed(2)}</strong></td>
+                          </tr>
+                        </table>
+                      </div>
+                      
+                      ${data.notes ? `
+                        <div class="notes-section">
+                          <div class="section-title">Notes:</div>
+                          <p>${data.notes}</p>
+                        </div>
+                      ` : ''}
+                      
+                      <div class="footer">
+                        <p>Thank you for your business!</p>
+                        <p>For questions about this invoice, please contact us at contact@greengen.com</p>
+                      </div>
+                    </div>
+                  </body>
+                  </html>
+                `;
+
+                // Use browser's print to PDF functionality
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(htmlContent);
+                printWindow.document.close();
+                printWindow.focus();
+                
+                setTimeout(() => {
+                  // Trigger print dialog which will allow saving as PDF
+                  printWindow.print();
+                }, 500);
+                
+              } catch (error) {
+                console.error('Error generating PDF:', error);
+                // Fallback to original JSON download
+                const element = document.createElement('a');
+                const file = new Blob([JSON.stringify(invoiceData, null, 2)], { type: 'application/json' });
+                element.href = URL.createObjectURL(file);
+                element.download = `invoice-${invoiceId}.json`;
+                element.click();
+              }
             }}
             className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
           >
-            Download
+            Download PDF
           </button>
         </div>
       </div>
@@ -560,34 +946,440 @@ const ProfessionalInvoiceWithChanges = ({ invoiceData, originalInvoiceData, invo
             <p className="mb-2">Thank you for your business!</p>
             <p>For questions about this invoice, please contact us at contact@greengen.com</p>
             {/* Changes indicator */}
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            {/* <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-yellow-800 font-medium">
                 🎯 <span className="bg-yellow-200 px-2 py-1 rounded">Changes highlighted in yellow</span>
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-center mt-8 gap-4">
+        <div className="flex justify-center mt-8 gap-4 print:hidden">
           <button
-            onClick={() => window.print()}
+            onClick={() => {
+              // Create a clean print view for edited invoice
+              const printWindow = window.open('', '_blank');
+              
+              printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <title>Invoice INV-${invoiceId} (Edited)</title>
+                  <style>
+                    @page {
+                      size: A4;
+                      margin: 0.5in;
+                    }
+                    body {
+                      font-family: Arial, sans-serif;
+                      line-height: 1.4;
+                      color: #000;
+                      background: white;
+                      margin: 0;
+                      padding: 0;
+                    }
+                    .invoice-container {
+                      max-width: 100%;
+                      background: white;
+                    }
+                    table {
+                      width: 100%;
+                      border-collapse: collapse;
+                    }
+                    th, td {
+                      border: 1px solid #ddd;
+                      padding: 8px;
+                      text-align: left;
+                    }
+                    th {
+                      background-color: #f5f5f5;
+                      font-weight: bold;
+                    }
+                    .text-right {
+                      text-align: right;
+                    }
+                    .text-center {
+                      text-align: center;
+                    }
+                    .header {
+                      display: flex;
+                      justify-content: space-between;
+                      margin-bottom: 30px;
+                    }
+                    .company-info {
+                      font-size: 12px;
+                    }
+                    .invoice-title {
+                      font-size: 24px;
+                      font-weight: bold;
+                      margin-bottom: 10px;
+                    }
+                    .section-title {
+                      font-size: 16px;
+                      font-weight: bold;
+                      margin: 20px 0 10px 0;
+                    }
+                    .totals-section {
+                      margin-top: 20px;
+                      display: flex;
+                      justify-content: flex-end;
+                    }
+                    .totals-table {
+                      width: 300px;
+                    }
+                    .notes-section {
+                      margin-top: 20px;
+                      padding: 15px;
+                      background-color: #f9f9f9;
+                      border-radius: 5px;
+                    }
+                    .footer {
+                      margin-top: 30px;
+                      text-align: center;
+                      font-size: 12px;
+                      color: #666;
+                      border-top: 1px solid #ddd;
+                      padding-top: 15px;
+                    }
+                    .changed {
+                      background-color: #fff3cd;
+                      padding: 2px 4px;
+                      border-radius: 3px;
+                    }
+                  </style>
+                </head>
+                <body>
+                  <div class="invoice-container">
+                    <div class="header">
+                      <div>
+                        <div class="invoice-title">INVOICE</div>
+                        <div class="company-info">
+                          <strong>GreenGen Energy Solutions</strong><br>
+                          123 Business Street<br>
+                          Business City, State 12345<br>
+                          Email: contact@greengen.com<br>
+                          Phone: +1 (555) 123-4567
+                        </div>
+                      </div>
+                      <div style="text-align: right;">
+                        <div><strong>Invoice #:</strong> INV-${invoiceId}</div>
+                        <div><strong>Date:</strong> ${formatDate(invoiceData.created_at)}</div>
+                        <div><strong>Status:</strong> ${invoiceData.status?.toUpperCase()}</div>
+                      </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+                      <div>
+                        <div class="section-title">Bill To:</div>
+                        <strong${hasChanged(data.recipient, originalData.recipient) ? ' class="changed"' : ''}>${data.recipient}</strong><br>
+                        ${data.building_site?.address ? `<span${hasChanged(data.building_site.address, originalData.building_site?.address) ? ' class="changed"' : ''}>${data.building_site.address}</span><br>` : ''}
+                        ${data.building_site?.city ? `<span${hasChanged(data.building_site.city, originalData.building_site?.city) ? ' class="changed"' : ''}>${data.building_site.city}</span><br>` : ''}
+                        ${data.building_site?.postal_code ? `<span${hasChanged(data.building_site.postal_code, originalData.building_site?.postal_code) ? ' class="changed"' : ''}>${data.building_site.postal_code}</span><br>` : ''}
+                        ${data.building_site?.country ? `<span${hasChanged(data.building_site.country, originalData.building_site?.country) ? ' class="changed"' : ''}>${data.building_site.country}</span>` : ''}
+                      </div>
+                      <div>
+                        <div class="section-title">Installation Address:</div>
+                        ${data.building_site?.address ? `<span${hasChanged(data.building_site.address, originalData.building_site?.address) ? ' class="changed"' : ''}>${data.building_site.address}</span><br>` : ''}
+                        ${data.building_site?.city ? `<span${hasChanged(data.building_site.city, originalData.building_site?.city) ? ' class="changed"' : ''}>${data.building_site.city}</span><br>` : ''}
+                        ${data.building_site?.postal_code ? `<span${hasChanged(data.building_site.postal_code, originalData.building_site?.postal_code) ? ' class="changed"' : ''}>${data.building_site.postal_code}</span><br>` : ''}
+                        ${data.building_site?.country ? `<span${hasChanged(data.building_site.country, originalData.building_site?.country) ? ' class="changed"' : ''}>${data.building_site.country}</span>` : ''}
+                      </div>
+                    </div>
+                    
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Description</th>
+                          <th class="text-center">Qty</th>
+                          <th class="text-right">Unit Price</th>
+                          <th class="text-right">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${data.products?.map((item, index) => {
+                          const originalItem = originalData.products?.[index] || {};
+                          return `
+                            <tr>
+                              <td>
+                                <strong${hasChanged(item.name, originalItem.name) ? ' class="changed"' : ''}>${item.name}</strong>
+                                ${item.description ? `<br><small${hasChanged(item.description, originalItem.description) ? ' class="changed"' : ''}>${item.description}</small>` : ''}
+                                ${item.climate_zone ? `<br><small style="color: #0066cc;${hasChanged(item.climate_zone, originalItem.climate_zone) ? ' background-color: #fff3cd;' : ''}">Climate Zone: ${item.climate_zone}</small>` : ''}
+                              </td>
+                              <td class="text-center${hasChanged(item.quantity, originalItem.quantity) ? ' changed' : ''}">${item.quantity}</td>
+                              <td class="text-right${hasChanged(item.unit_price, originalItem.unit_price) ? ' changed' : ''}">€${(item.unit_price || 0).toFixed(2)}</td>
+                              <td class="text-right${hasChanged(item.total_price, originalItem.total_price) ? ' changed' : ''}"><strong>€${(item.total_price || 0).toFixed(2)}</strong></td>
+                            </tr>
+                          `;
+                        }).join('') || ''}
+                      </tbody>
+                    </table>
+                    
+                    <div class="totals-section">
+                      <table class="totals-table">
+                        <tr>
+                          <td>Subtotal:</td>
+                          <td class="text-right${hasChanged(data.subtotal, originalData.subtotal) ? ' changed' : ''}"><strong>€${(data.subtotal || 0).toFixed(2)}</strong></td>
+                        </tr>
+                        <tr>
+                          <td>Tax (${((data.tax_rate || 0) * 100).toFixed(1)}%):</td>
+                          <td class="text-right${hasChanged(data.tax_amount, originalData.tax_amount) ? ' changed' : ''}"><strong>€${(data.tax_amount || 0).toFixed(2)}</strong></td>
+                        </tr>
+                        <tr style="border-top: 2px solid #333;">
+                          <td><strong>Total Amount:</strong></td>
+                          <td class="text-right${hasChanged(data.total_amount, originalData.total_amount) ? ' changed' : ''}"><strong>€${(data.total_amount || 0).toFixed(2)}</strong></td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    ${data.notes ? `
+                      <div class="notes-section">
+                        <div class="section-title">Notes:</div>
+                        <p${hasChanged(data.notes, originalData.notes) ? ' class="changed"' : ''}>${data.notes}</p>
+                      </div>
+                    ` : ''}
+                    
+                    <div class="footer">
+                      <p>Thank you for your business!</p>
+                      <p>For questions about this invoice, please contact us at contact@greengen.com</p>
+                      <div style="margin-top: 15px; padding: 10px; background-color: #fff3cd; border-radius: 5px;">
+                        <strong>Note:</strong> Highlighted areas indicate changes made to the original invoice.
+                      </div>
+                    </div>
+                  </div>
+                </body>
+                </html>
+              `);
+              printWindow.document.close();
+              printWindow.focus();
+              setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+              }, 250);
+            }}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Print Invoice
           </button>
           <button
-            onClick={() => {
-              // Create download link for invoice data
-              const element = document.createElement('a');
-              const file = new Blob([JSON.stringify(invoiceData, null, 2)], { type: 'application/json' });
-              element.href = URL.createObjectURL(file);
-              element.download = `invoice-${invoiceId}-edited.json`;
-              element.click();
+            onClick={async () => {
+              try {
+                // Create HTML content for PDF generation with changes highlighted
+                const htmlContent = `
+                  <!DOCTYPE html>
+                  <html>
+                  <head>
+                    <meta charset="utf-8">
+                    <title>Invoice INV-${invoiceId} (Edited)</title>
+                    <style>
+                      @page {
+                        size: A4;
+                        margin: 0.5in;
+                      }
+                      body {
+                        font-family: Arial, sans-serif;
+                        line-height: 1.4;
+                        color: #000;
+                        background: white;
+                        margin: 0;
+                        padding: 0;
+                      }
+                      .invoice-container {
+                        max-width: 100%;
+                        background: white;
+                      }
+                      table {
+                        width: 100%;
+                        border-collapse: collapse;
+                      }
+                      th, td {
+                        border: 1px solid #ddd;
+                        padding: 8px;
+                        text-align: left;
+                      }
+                      th {
+                        background-color: #f5f5f5;
+                        font-weight: bold;
+                      }
+                      .text-right {
+                        text-align: right;
+                      }
+                      .text-center {
+                        text-align: center;
+                      }
+                      .header {
+                        display: flex;
+                        justify-content: space-between;
+                        margin-bottom: 30px;
+                      }
+                      .company-info {
+                        font-size: 12px;
+                      }
+                      .invoice-title {
+                        font-size: 24px;
+                        font-weight: bold;
+                        margin-bottom: 10px;
+                      }
+                      .section-title {
+                        font-size: 16px;
+                        font-weight: bold;
+                        margin: 20px 0 10px 0;
+                      }
+                      .totals-section {
+                        margin-top: 20px;
+                        display: flex;
+                        justify-content: flex-end;
+                      }
+                      .totals-table {
+                        width: 300px;
+                      }
+                      .notes-section {
+                        margin-top: 20px;
+                        padding: 15px;
+                        background-color: #f9f9f9;
+                        border-radius: 5px;
+                      }
+                      .footer {
+                        margin-top: 30px;
+                        text-align: center;
+                        font-size: 12px;
+                        color: #666;
+                        border-top: 1px solid #ddd;
+                        padding-top: 15px;
+                      }
+                      .changed {
+                        background-color: #fff3cd;
+                        padding: 2px 4px;
+                        border-radius: 3px;
+                      }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="invoice-container">
+                      <div class="header">
+                        <div>
+                          <div class="invoice-title">INVOICE</div>
+                          <div class="company-info">
+                            <strong>GreenGen Energy Solutions</strong><br>
+                            123 Business Street<br>
+                            Business City, State 12345<br>
+                            Email: contact@greengen.com<br>
+                            Phone: +1 (555) 123-4567
+                          </div>
+                        </div>
+                        <div style="text-align: right;">
+                          <div><strong>Invoice #:</strong> INV-${invoiceId}</div>
+                          <div><strong>Date:</strong> ${formatDate(invoiceData.created_at)}</div>
+                          <div><strong>Status:</strong> ${invoiceData.status?.toUpperCase()}</div>
+                        </div>
+                      </div>
+                      
+                      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+                        <div>
+                          <div class="section-title">Bill To:</div>
+                          <strong${hasChanged(data.recipient, originalData.recipient) ? ' class="changed"' : ''}>${data.recipient}</strong><br>
+                          ${data.building_site?.address ? `<span${hasChanged(data.building_site.address, originalData.building_site?.address) ? ' class="changed"' : ''}>${data.building_site.address}</span><br>` : ''}
+                          ${data.building_site?.city ? `<span${hasChanged(data.building_site.city, originalData.building_site?.city) ? ' class="changed"' : ''}>${data.building_site.city}</span><br>` : ''}
+                          ${data.building_site?.postal_code ? `<span${hasChanged(data.building_site.postal_code, originalData.building_site?.postal_code) ? ' class="changed"' : ''}>${data.building_site.postal_code}</span><br>` : ''}
+                          ${data.building_site?.country ? `<span${hasChanged(data.building_site.country, originalData.building_site?.country) ? ' class="changed"' : ''}>${data.building_site.country}</span>` : ''}
+                        </div>
+                        <div>
+                          <div class="section-title">Installation Address:</div>
+                          ${data.building_site?.address ? `<span${hasChanged(data.building_site.address, originalData.building_site?.address) ? ' class="changed"' : ''}>${data.building_site.address}</span><br>` : ''}
+                          ${data.building_site?.city ? `<span${hasChanged(data.building_site.city, originalData.building_site?.city) ? ' class="changed"' : ''}>${data.building_site.city}</span><br>` : ''}
+                          ${data.building_site?.postal_code ? `<span${hasChanged(data.building_site.postal_code, originalData.building_site?.postal_code) ? ' class="changed"' : ''}>${data.building_site.postal_code}</span><br>` : ''}
+                          ${data.building_site?.country ? `<span${hasChanged(data.building_site.country, originalData.building_site?.country) ? ' class="changed"' : ''}>${data.building_site.country}</span>` : ''}
+                        </div>
+                      </div>
+                      
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Description</th>
+                            <th class="text-center">Qty</th>
+                            <th class="text-right">Unit Price</th>
+                            <th class="text-right">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${data.products?.map((item, index) => {
+                            const originalItem = originalData.products?.[index] || {};
+                            return `
+                              <tr>
+                                <td>
+                                  <strong${hasChanged(item.name, originalItem.name) ? ' class="changed"' : ''}>${item.name}</strong>
+                                  ${item.description ? `<br><small${hasChanged(item.description, originalItem.description) ? ' class="changed"' : ''}>${item.description}</small>` : ''}
+                                  ${item.climate_zone ? `<br><small style="color: #0066cc;${hasChanged(item.climate_zone, originalItem.climate_zone) ? ' background-color: #fff3cd;' : ''}">Climate Zone: ${item.climate_zone}</small>` : ''}
+                                </td>
+                                <td class="text-center${hasChanged(item.quantity, originalItem.quantity) ? ' changed' : ''}">${item.quantity}</td>
+                                <td class="text-right${hasChanged(item.unit_price, originalItem.unit_price) ? ' changed' : ''}">€${(item.unit_price || 0).toFixed(2)}</td>
+                                <td class="text-right${hasChanged(item.total_price, originalItem.total_price) ? ' changed' : ''}"><strong>€${(item.total_price || 0).toFixed(2)}</strong></td>
+                              </tr>
+                            `;
+                          }).join('') || ''}
+                        </tbody>
+                      </table>
+                      
+                      <div class="totals-section">
+                        <table class="totals-table">
+                          <tr>
+                            <td>Subtotal:</td>
+                            <td class="text-right${hasChanged(data.subtotal, originalData.subtotal) ? ' changed' : ''}"><strong>€${(data.subtotal || 0).toFixed(2)}</strong></td>
+                          </tr>
+                          <tr>
+                            <td>Tax (${((data.tax_rate || 0) * 100).toFixed(1)}%):</td>
+                            <td class="text-right${hasChanged(data.tax_amount, originalData.tax_amount) ? ' changed' : ''}"><strong>€${(data.tax_amount || 0).toFixed(2)}</strong></td>
+                          </tr>
+                          <tr style="border-top: 2px solid #333;">
+                            <td><strong>Total Amount:</strong></td>
+                            <td class="text-right${hasChanged(data.total_amount, originalData.total_amount) ? ' changed' : ''}"><strong>€${(data.total_amount || 0).toFixed(2)}</strong></td>
+                          </tr>
+                        </table>
+                      </div>
+                      
+                      ${data.notes ? `
+                        <div class="notes-section">
+                          <div class="section-title">Notes:</div>
+                          <p${hasChanged(data.notes, originalData.notes) ? ' class="changed"' : ''}>${data.notes}</p>
+                        </div>
+                      ` : ''}
+                      
+                      <div class="footer">
+                        <p>Thank you for your business!</p>
+                        <p>For questions about this invoice, please contact us at contact@greengen.com</p>
+                        <div style="margin-top: 15px; padding: 10px; background-color: #fff3cd; border-radius: 5px;">
+                          <strong>Note:</strong> Highlighted areas indicate changes made to the original invoice.
+                        </div>
+                      </div>
+                    </div>
+                  </body>
+                  </html>
+                `;
+
+                // Use browser's print to PDF functionality
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(htmlContent);
+                printWindow.document.close();
+                printWindow.focus();
+                
+                setTimeout(() => {
+                  // Trigger print dialog which will allow saving as PDF
+                  printWindow.print();
+                }, 500);
+                
+              } catch (error) {
+                console.error('Error generating PDF:', error);
+                // Fallback to original JSON download
+                const element = document.createElement('a');
+                const file = new Blob([JSON.stringify(invoiceData, null, 2)], { type: 'application/json' });
+                element.href = URL.createObjectURL(file);
+                element.download = `invoice-${invoiceId}-edited.json`;
+                element.click();
+              }
             }}
             className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
           >
-            Download
+            Download PDF
           </button>
         </div>
       </div>

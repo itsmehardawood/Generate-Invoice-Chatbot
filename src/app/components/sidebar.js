@@ -3,13 +3,7 @@
 import { useState } from 'react';
 
 const Sidebar = () => {
-  const [chats, setChats] = useState([
-    { id: 1, title: 'Monthly Service Invoice', date: 'Yesterday', type: 'invoice' },
-    { id: 2, title: 'Web Development Project', date: '2 days ago', type: 'estimate' },
-    { id: 3, title: 'Logo Design Invoice', date: '1 week ago', type: 'invoice' },
-    { id: 4, title: 'SEO Services Quote', date: '2 weeks ago', type: 'quote' },
-    { id: 5, title: 'Consulting Invoice', date: '3 weeks ago', type: 'invoice' },
-  ]);
+  const [chats, setChats] = useState([]);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -145,8 +139,8 @@ const Sidebar = () => {
                 <span className="text-white text-sm font-semibold">JD</span>
               </div>
               <div>
-                <p className="text-sm font-medium">Business User</p>
-                <p className="text-xs text-gray-400">Pro Account</p>
+                <p className="text-sm font-medium">XYZ User</p>
+                <p className="text-xs text-gray-400">User Account</p>
               </div>
             </div>
             <button 

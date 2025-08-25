@@ -99,7 +99,8 @@ const ChatWindow = () => {
     // Context-based detection: if we just created an invoice and user uses edit words
     if (hasEditKeyword && appState.currentContext === 'invoice_created') return 'edit';
     
-    // Default to parse for product requests
+    // For everything else (product search and general chat), let the backend decide
+    // The /parse endpoint now handles both product search and general chat automatically
     return 'parse';
   };
 
@@ -217,7 +218,7 @@ const ChatWindow = () => {
     }
   };
 
-  // Handle parse requests (product search)
+  // Handle parse requests (product search and general chat)
   const handleParseRequest = async (userInput) => {
     try {
       // Update app state
@@ -230,44 +231,99 @@ const ChatWindow = () => {
       // Parse user query with backend
       const parseResult = await parseQuery(userInput);
       
-      // Set the current query ID for product selection
-      setCurrentQueryId(parseResult.query_id);
-      
-      // Update app state
-      setAppState(prev => ({
-        ...prev,
-        currentContext: 'parse',
-        lastAction: 'parsed_query',
-        lastActionTimestamp: Date.now()
-      }));
+      // Check response type and handle accordingly
+      if (parseResult.response_type === "general_chat") {
+        // Handle general chat response
+        const assistantResponse = {
+          id: Date.now(),
+          text: parseResult.message,
+          sender: 'assistant',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: 'general_chat'
+        };
 
-      const assistantResponse = {
-        id: Date.now(),
-        text: `Great! I found ${parseResult.matched_products.length} products matching your request. Please review and select the items you'd like to include in your invoice:`,
-        sender: 'assistant',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        type: 'product-selection',
-        products: parseResult.matched_products,
-        selectedProducts: [],
-        queryId: parseResult.query_id
-      };
+        setMessages(prev => [...prev, assistantResponse]);
+        
+        // Update app state for general chat
+        setAppState(prev => ({
+          ...prev,
+          currentContext: 'general_chat',
+          lastAction: 'general_chat',
+          lastActionTimestamp: Date.now()
+        }));
+        
+        return true;
+      } 
+      else if (parseResult.response_type === "product_search") {
+        // Handle product search response
+        
+        // Set the current query ID for product selection
+        setCurrentQueryId(parseResult.query_id);
+        
+        // Transform backend products to frontend format if needed
+        const transformedProducts = parseResult.matched_products?.map(product => ({
+          id: product.id,
+          name: product.P_name || product.name,
+          code: product.P_code || product.code,
+          description: product.description || `${product.P_name || product.name} - Climate Zone ${product.climate_zone || 'N/A'}`,
+          price: product.totale || product.price || 0,
+          installation: product.installazione || product.installation || 0,
+          climate_zone: product.climate_zone,
+          similarity_score: product.similarity_score
+        })) || [];
+        
+        const assistantResponse = {
+          id: Date.now(),
+          text: `Great! I found ${parseResult.matched_products?.length || 0} products matching your request. ${parseResult.extracted_items ? 
+            `I extracted: ${parseResult.extracted_items.map(item => `${item.quantity} ${item.name}`).join(', ')}.` : ''} Please review and select the items you'd like to include in your invoice:`,
+          sender: 'assistant',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: 'product-selection',
+          products: transformedProducts,
+          selectedProducts: [],
+          queryId: parseResult.query_id,
+          extractedItems: parseResult.extracted_items
+        };
 
-      setMessages(prev => [...prev, assistantResponse]);
-      return true;
+        setMessages(prev => [...prev, assistantResponse]);
+        
+        // Update app state for product search
+        setAppState(prev => ({
+          ...prev,
+          currentContext: 'product_search',
+          lastAction: 'parsed_query',
+          lastActionTimestamp: Date.now()
+        }));
+        
+        return true;
+      }
+      else {
+        // Fallback for unknown response types
+        const assistantResponse = {
+          id: Date.now(),
+          text: "I received an unexpected response format from the backend. Please try again.",
+          sender: 'assistant',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: 'error'
+        };
+
+        setMessages(prev => [...prev, assistantResponse]);
+        return true;
+      }
     } catch (error) {
       console.error('Error parsing query:', error);
       throw error; // Let the calling function handle this
     }
   };
 
-  // Sample product data
-  const sampleProducts = [
-    { id: 1, name: 'Web Development', description: 'Custom website development', price: 2500.00 },
-    { id: 2, name: 'Logo Design', description: 'Professional logo design', price: 500.00 },
-    { id: 3, name: 'SEO Optimization', description: 'Search engine optimization', price: 800.00 },
-    { id: 4, name: 'Content Writing', description: 'Professional content creation', price: 300.00 },
-    { id: 5, name: 'Social Media Setup', description: 'Social media account setup and branding', price: 400.00 }
-  ];
+  // // Sample product data
+  // const sampleProducts = [
+  //   { id: 1, name: 'Web Development', description: 'Custom website development', price: 2500.00 },
+  //   { id: 2, name: 'Logo Design', description: 'Professional logo design', price: 500.00 },
+  //   { id: 3, name: 'SEO Optimization', description: 'Search engine optimization', price: 800.00 },
+  //   { id: 4, name: 'Content Writing', description: 'Professional content creation', price: 300.00 },
+  //   { id: 5, name: 'Social Media Setup', description: 'Social media account setup and branding', price: 400.00 }
+  // ];
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -306,7 +362,7 @@ const ChatWindow = () => {
   };
 
   const handleOfflineResponse = (userInput) => {
-    // Fallback responses when backend is not available
+    // Enhanced fallback responses when backend is not available
     setTimeout(() => {
       const sampleProducts = [
         { id: 1, name: 'Web Development', description: 'Custom website development', price: 2500.00 },
@@ -319,7 +375,10 @@ const ChatWindow = () => {
       let aiResponse = {};
       const userInputLower = userInput.toLowerCase();
       
-      if (userInputLower.includes('product') || userInputLower.includes('select') || userInputLower.includes('choose')) {
+      // Check if it's a product-related query
+      if (userInputLower.includes('product') || userInputLower.includes('pdc') || 
+          userInputLower.includes('heat pump') || userInputLower.includes('argo') ||
+          userInputLower.includes('invoice') || userInputLower.includes('quote')) {
         aiResponse = {
           id: Date.now() + 1,
           text: "⚠️ Backend offline - showing sample products. Here are some example products:",
@@ -330,10 +389,24 @@ const ChatWindow = () => {
           selectedProducts: [],
           isOffline: true
         };
-      } else {
+      } 
+      // Handle general greetings and questions offline
+      else if (userInputLower.includes('hello') || userInputLower.includes('hi') || 
+               userInputLower.includes('help') || userInputLower.includes('what') ||
+               userInputLower.includes('how') || userInputLower.includes('can you')) {
         aiResponse = {
           id: Date.now() + 1,
-          text: "⚠️ Backend connection unavailable. I'm running in offline mode with limited functionality. Please ensure your FastAPI server is running at http://127.0.0.1:8000 for full features.",
+          text: "⚠️ I'm currently in offline mode due to backend connectivity issues. While I can't access the full product database or AI chat features right now, I can still help you with basic invoice operations using sample data.\n\nTo restore full functionality including:\n• Product search and matching\n• Smart general chat responses\n• Real invoice creation\n\nPlease ensure your FastAPI server is running at http://127.0.0.1:8000.",
+          sender: 'assistant',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: 'general_chat'
+        };
+      }
+      // Default offline response
+      else {
+        aiResponse = {
+          id: Date.now() + 1,
+          text: "⚠️ Backend connection unavailable. I'm running in offline mode with limited functionality. Please ensure your FastAPI server is running at http://127.0.0.1:8000 for full features including product search and smart chat responses.",
           sender: 'assistant',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           type: 'error'
