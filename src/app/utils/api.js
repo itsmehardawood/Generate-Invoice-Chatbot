@@ -1,6 +1,6 @@
 // API utility functions for FastAPI backend integration
 
-const API_BASE_URL = 'http://89.116.22.96:8000';
+const API_BASE_URL = 'http://89.116.22.96:8090';
 
 // Helper function to handle API errors
 const handleApiError = async (response) => {
