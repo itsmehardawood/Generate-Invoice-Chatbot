@@ -50,7 +50,7 @@ const ChatWindow = () => {
       if (!isConnected) {
         setMessages(prev => [...prev, {
           id: Date.now(),
-          text: "⚠️ Backend connection unavailable. Please ensure your FastAPI server is running at http://127.0.0.1:8000",
+          text: "⚠️ Backend connection unavailable. Please ensure your FastAPI server is running at https://greengenius.crm-labloid.com",
           sender: "assistant",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           type: 'error'
@@ -396,7 +396,7 @@ const ChatWindow = () => {
                userInputLower.includes('how') || userInputLower.includes('can you')) {
         aiResponse = {
           id: Date.now() + 1,
-          text: "⚠️ I'm currently in offline mode due to backend connectivity issues. While I can't access the full product database or AI chat features right now, I can still help you with basic invoice operations using sample data.\n\nTo restore full functionality including:\n• Product search and matching\n• Smart general chat responses\n• Real invoice creation\n\nPlease ensure your FastAPI server is running at http://127.0.0.1:8000.",
+          text: "⚠️ I'm currently in offline mode due to backend connectivity issues. While I can't access the full product database or AI chat features right now, I can still help you with basic invoice operations using sample data.\n\nTo restore full functionality including:\n• Product search and matching\n• Smart general chat responses\n• Real invoice creation\n\nPlease ensure your FastAPI server is running at https://greengenius.crm-labloid.com",
           sender: 'assistant',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           type: 'general_chat'
@@ -406,7 +406,7 @@ const ChatWindow = () => {
       else {
         aiResponse = {
           id: Date.now() + 1,
-          text: "⚠️ Backend connection unavailable. I'm running in offline mode with limited functionality. Please ensure your FastAPI server is running at http://127.0.0.1:8000 for full features including product search and smart chat responses.",
+          text: "⚠️ Backend connection unavailable. I'm running in offline mode with limited functionality. Please ensure your FastAPI server is running at  https://greengenius.crm-labloid.com for full features including product search and smart chat responses.",
           sender: 'assistant',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           type: 'error'
@@ -673,7 +673,7 @@ const ChatWindow = () => {
             <div className="mb-8 text-center">
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Invoice Generator</h1>
               <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">
-                AI-powered invoice creation with FastAPI backend
+                AI-powered invoice creation with Python backend
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-500">
                 Simply describe what you need to invoice and I will find matching products

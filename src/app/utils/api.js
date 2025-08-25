@@ -1,6 +1,6 @@
 // API utility functions for FastAPI backend integration
 
-const API_BASE_URL = 'http://89.116.22.96:8090';
+const API_BASE_URL = 'https://greengenius.crm-labloid.com';
 
 // Helper function to handle API errors
 const handleApiError = async (response) => {
