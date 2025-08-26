@@ -18,7 +18,7 @@ const handleApiError = async (response) => {
 // Parse user query and get matched products
 export const parseQuery = async (query) => {
   try {
-    console.log('Sending query to backend:', { query });
+    // console.log('Sending query to backend:', { query });
     
     const response = await fetch(`${API_BASE_URL}/parse`, {
       method: 'POST',
@@ -28,11 +28,11 @@ export const parseQuery = async (query) => {
       body: JSON.stringify({ query }),
     });
     
-    console.log('Backend response status:', response.status);
+    // console.log('Backend response status:', response.status);
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.log('Backend error response:', errorText);
+      // console.log('Backend error response:', errorText);
       
       try {
         const errorData = JSON.parse(errorText);
@@ -43,7 +43,7 @@ export const parseQuery = async (query) => {
     }
     
     const result = await response.json();
-    console.log('Backend success response:', result);
+    // console.log('Backend success response:', result);
     return result;
   } catch (error) {
     console.error('Parse query error:', error);
@@ -156,11 +156,11 @@ export const editInvoice = async (invoiceId, editInstruction) => {
       }),
     });
     
-    console.log('Invoice edit response status:', response.status);
+    // console.log('Invoice edit response status:', response.status);
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.log('Invoice edit error response:', errorText);
+      // console.log('Invoice edit error response:', errorText);
       
       try {
         const errorData = JSON.parse(errorText);
@@ -171,7 +171,7 @@ export const editInvoice = async (invoiceId, editInstruction) => {
     }
     
     const result = await response.json();
-    console.log('Invoice edit success response:', result);
+    // console.log('Invoice edit success response:', result);
     return result;
   } catch (error) {
     console.error('Edit invoice error:', error);

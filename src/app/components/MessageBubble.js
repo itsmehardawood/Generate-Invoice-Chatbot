@@ -38,24 +38,13 @@ const InlineInvoicePreview = ({ invoiceData, onUpdate, onFinalize, isOffline = f
   };
 
   return (
-    <div className="max-w-4xl mx-auto bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Invoice Preview</h2>
+    <div className="max-w-4xl mx-auto bg-white dark:bg-gray-900 rounded-xl shadow-lg p-3 lg:p-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 lg:mb-6 gap-3">
+        <h2 className="text-lg lg:text-2xl font-bold text-gray-900 dark:text-white">Invoice Preview</h2>
         <div className="flex gap-2">
-          {/* <button
-            onClick={() => onUpdate?.(formData)}
-            disabled={isOffline}
-            className={`px-4 py-2 rounded-lg transition-colors text-sm ${
-              isOffline 
-                ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
-          >
-            Save Changes
-          </button> */}
           <button
             onClick={handleFinalize}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+            className="px-3 lg:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm w-full sm:w-auto"
           >
             Finalize Invoice
           </button>
@@ -63,23 +52,47 @@ const InlineInvoicePreview = ({ invoiceData, onUpdate, onFinalize, isOffline = f
       </div>
 
       {/* Selected Products Summary */}
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Selected Products</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+      <div className="mb-4 lg:mb-6">
+        <h3 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-white mb-3">Selected Products</h3>
+        
+        {/* Mobile Card Layout */}
+        <div className="block lg:hidden space-y-3">
+          {(invoiceData?.products || []).map((item, index) => (
+            <div key={`preview-mobile-item-${item.product_id || index}`} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
+              <div className="font-medium text-gray-900 dark:text-white text-sm mb-2">
+                {item.name}
+                {item.description && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400 font-normal mt-1">{item.description}</div>
+                )}
+                {item.climate_zone && (
+                  <div className="text-xs text-blue-600 dark:text-blue-400 font-normal mt-1">Zone: {item.climate_zone}</div>
+                )}
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Qty: {item.quantity}</span>
+                <span className="text-gray-600 dark:text-gray-400">€{(item.unit_price || 0).toFixed(2)}</span>
+                <span className="font-semibold text-gray-900 dark:text-white">€{(item.total_price || 0).toFixed(2)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop Table Layout */}
+        <div className="hidden lg:block overflow-x-auto">
+          <table className="w-full border-collapse min-w-[480px]">
             <thead>
               <tr className="border-b-2 border-gray-200 dark:border-gray-700">
-                <th className="text-left py-2 text-sm font-medium text-gray-700 dark:text-gray-300">Item</th>
-                <th className="text-center py-2 text-sm font-medium text-gray-700 dark:text-gray-300">Qty</th>
-                <th className="text-right py-2 text-sm font-medium text-gray-700 dark:text-gray-300">Unit Price</th>
-                <th className="text-right py-2 text-sm font-medium text-gray-700 dark:text-gray-300">Total</th>
+                <th className="text-left py-2 text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">Item</th>
+                <th className="text-center py-2 text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">Qty</th>
+                <th className="text-right py-2 text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">Unit Price</th>
+                <th className="text-right py-2 text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">Total</th>
               </tr>
             </thead>
             <tbody>
               {(invoiceData?.products || []).map((item, index) => (
                 <tr key={`preview-item-${item.product_id || index}`} className="border-b border-gray-100 dark:border-gray-800">
                   <td className="py-2 text-gray-900 dark:text-white">
-                    <div className="font-medium">{item.name}</div>
+                    <div className="font-medium text-sm lg:text-base">{item.name}</div>
                     {item.description && (
                       <div className="text-xs text-gray-500 dark:text-gray-400">{item.description}</div>
                     )}
@@ -87,14 +100,15 @@ const InlineInvoicePreview = ({ invoiceData, onUpdate, onFinalize, isOffline = f
                       <div className="text-xs text-blue-600 dark:text-blue-400">Zone: {item.climate_zone}</div>
                     )}
                   </td>
-                  <td className="py-2 text-center text-gray-900 dark:text-white">{item.quantity}</td>
-                  <td className="py-2 text-right text-gray-900 dark:text-white">€{(item.unit_price || 0).toFixed(2)}</td>
-                  <td className="py-2 text-right text-gray-900 dark:text-white">€{(item.total_price || (item.quantity * item.unit_price) || 0).toFixed(2)}</td>
+                  <td className="py-2 text-center text-gray-900 dark:text-white text-sm lg:text-base">{item.quantity}</td>
+                  <td className="py-2 text-right text-gray-900 dark:text-white text-sm lg:text-base">€{(item.unit_price || 0).toFixed(2)}</td>
+                  <td className="py-2 text-right text-gray-900 dark:text-white text-sm lg:text-base">€{(item.total_price || (item.quantity * item.unit_price) || 0).toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+      </div>
         
         {/* Totals Summary */}
         <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
@@ -115,7 +129,6 @@ const InlineInvoicePreview = ({ invoiceData, onUpdate, onFinalize, isOffline = f
             </div>
           </div>
         </div>
-      </div>
 
       {/* Customer Information Form */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -228,12 +241,12 @@ const ProfessionalInvoice = ({ invoiceData, invoiceId, isOffline = false }) => {
   return (
     <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-2xl overflow-hidden" data-invoice-id={`invoice-${invoiceId}`}>
       {/* Invoice Paper Effect */}
-      <div className="bg-white p-8" style={{ fontFamily: 'Arial, sans-serif' }}>
+      <div className="bg-white p-4 lg:p-8" style={{ fontFamily: 'Arial, sans-serif' }}>
         {/* Header */}
-        <div className="flex justify-between items-start mb-8">
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start mb-6 lg:mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">INVOICE</h1>
-            <div className="text-sm text-gray-600">
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">INVOICE</h1>
+            <div className="text-xs lg:text-sm text-gray-600">
               <p className="font-semibold">GreenGen Energy Solutions</p>
               <p>123 Business Street</p>
               <p>Business City, State 12345</p>
@@ -241,8 +254,8 @@ const ProfessionalInvoice = ({ invoiceData, invoiceId, isOffline = false }) => {
               <p>Phone: +1 (555) 123-4567</p>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-sm text-gray-600 space-y-1">
+          <div className="text-left lg:text-right">
+            <div className="text-xs lg:text-sm text-gray-600 space-y-1">
               <p><span className="font-semibold">Invoice #:</span> INV-{invoiceId}</p>
               <p><span className="font-semibold">Date:</span> {formatDate(invoiceData.created_at)}</p>
               <p><span className="font-semibold">Status:</span> <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">{invoiceData.status?.toUpperCase()}</span></p>
@@ -251,11 +264,11 @@ const ProfessionalInvoice = ({ invoiceData, invoiceId, isOffline = false }) => {
         </div>
 
         {/* Bill To Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8 mb-6 lg:mb-8">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Bill To:</h3>
-            <div className="text-sm text-gray-700 space-y-1">
-              <p className="font-semibold text-base">{data.recipient}</p>
+            <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-3">Bill To:</h3>
+            <div className="text-xs lg:text-sm text-gray-700 space-y-1">
+              <p className="font-semibold text-sm lg:text-base">{data.recipient}</p>
               {data.building_site?.address && <p>{data.building_site.address}</p>}
               {data.building_site?.city && <p>{data.building_site.city}</p>}
               {data.building_site?.postal_code && <p>{data.building_site.postal_code}</p>}
@@ -263,8 +276,8 @@ const ProfessionalInvoice = ({ invoiceData, invoiceId, isOffline = false }) => {
             </div>
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Installation Address:</h3>
-            <div className="text-sm text-gray-700 space-y-1">
+            <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-3">Installation Address:</h3>
+            <div className="text-xs lg:text-sm text-gray-700 space-y-1">
               {data.building_site?.address && <p>{data.building_site.address}</p>}
               {data.building_site?.city && <p>{data.building_site.city}</p>}
               {data.building_site?.postal_code && <p>{data.building_site.postal_code}</p>}
@@ -344,7 +357,7 @@ const ProfessionalInvoice = ({ invoiceData, invoiceId, isOffline = false }) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-center mt-8 gap-4 print:hidden">
+        <div className="flex flex-col sm:flex-row justify-center mt-6 lg:mt-8 gap-3 lg:gap-4 print:hidden">
           <button
             onClick={() => {
               // Create a clean print view
@@ -538,7 +551,7 @@ const ProfessionalInvoice = ({ invoiceData, invoiceId, isOffline = false }) => {
                 }, 250);
               }
             }}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-4 lg:px-6 py-2 lg:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm lg:text-base w-full sm:w-auto active:scale-95"
           >
             Print Invoice
           </button>
@@ -786,14 +799,14 @@ const ProfessionalInvoiceWithChanges = ({ invoiceData, originalInvoiceData, invo
   };
 
   return (
-    <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-2xl overflow-hidden">
+    <div className="w-full max-w-4xl mx-auto bg-white rounded-xl shadow-2xl overflow-hidden">
       {/* Invoice Paper Effect */}
-      <div className="bg-white p-8" style={{ fontFamily: 'Arial, sans-serif' }}>
+      <div className="bg-white p-4 lg:p-8" style={{ fontFamily: 'Arial, sans-serif' }}>
         {/* Header */}
-        <div className="flex justify-between items-start mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">INVOICE</h1>
-            <div className="text-sm text-gray-600">
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start mb-6 lg:mb-8 space-y-4 lg:space-y-0">
+          <div className="order-2 lg:order-1">
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">INVOICE</h1>
+            <div className="text-xs lg:text-sm text-gray-600">
               <p className="font-semibold">
                 {renderWithHighlight(data.sender || 'GreenGen Energy Solutions', originalData.sender, 'font-semibold')}
               </p>
@@ -803,8 +816,8 @@ const ProfessionalInvoiceWithChanges = ({ invoiceData, originalInvoiceData, invo
               <p>Phone: +1 (555) 123-4567</p>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-sm text-gray-600 space-y-1">
+          <div className="order-1 lg:order-2 text-left lg:text-right">
+            <div className="text-xs lg:text-sm text-gray-600 space-y-1">
               <p><span className="font-semibold">Invoice #:</span> INV-{invoiceId}</p>
               <p><span className="font-semibold">Date:</span> {formatDate(invoiceData.created_at)}</p>
               <p><span className="font-semibold">Status:</span> <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">{invoiceData.status?.toUpperCase()}</span></p>
@@ -813,12 +826,12 @@ const ProfessionalInvoiceWithChanges = ({ invoiceData, originalInvoiceData, invo
         </div>
 
         {/* Bill To Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8 mb-6 lg:mb-8">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Bill To:</h3>
-            <div className="text-sm text-gray-700 space-y-1">
-              <p className="font-semibold text-base">
-                {renderWithHighlight(data.recipient, originalData.recipient, 'font-semibold text-base')}
+            <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-2 lg:mb-3">Bill To:</h3>
+            <div className="text-xs lg:text-sm text-gray-700 space-y-1">
+              <p className="font-semibold text-sm lg:text-base">
+                {renderWithHighlight(data.recipient, originalData.recipient, 'font-semibold text-sm lg:text-base')}
               </p>
               {data.building_site?.address && (
                 <p>{renderWithHighlight(data.building_site.address, originalData.building_site?.address)}</p>
@@ -835,8 +848,8 @@ const ProfessionalInvoiceWithChanges = ({ invoiceData, originalInvoiceData, invo
             </div>
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Installation Address:</h3>
-            <div className="text-sm text-gray-700 space-y-1">
+            <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-2 lg:mb-3">Installation Address:</h3>
+            <div className="text-xs lg:text-sm text-gray-700 space-y-1">
               {data.building_site?.address && (
                 <p>{renderWithHighlight(data.building_site.address, originalData.building_site?.address)}</p>
               )}
@@ -854,14 +867,14 @@ const ProfessionalInvoiceWithChanges = ({ invoiceData, originalInvoiceData, invo
         </div>
 
         {/* Products Table */}
-        <div className="mb-8">
-          <table className="w-full border-collapse">
+        <div className="mb-6 lg:mb-8 overflow-x-auto">
+          <table className="w-full border-collapse min-w-full">
             <thead>
               <tr className="bg-gray-50 border-b-2 border-gray-200">
-                <th className="text-left py-3 px-4 font-semibold text-gray-900">Description</th>
-                <th className="text-center py-3 px-4 font-semibold text-gray-900">Qty</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-900">Unit Price</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-900">Total</th>
+                <th className="text-left py-2 lg:py-3 px-2 lg:px-4 font-semibold text-gray-900 text-xs lg:text-sm">Description</th>
+                <th className="text-center py-2 lg:py-3 px-2 lg:px-4 font-semibold text-gray-900 text-xs lg:text-sm">Qty</th>
+                <th className="text-right py-2 lg:py-3 px-2 lg:px-4 font-semibold text-gray-900 text-xs lg:text-sm">Unit Price</th>
+                <th className="text-right py-2 lg:py-3 px-2 lg:px-4 font-semibold text-gray-900 text-xs lg:text-sm">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -869,13 +882,13 @@ const ProfessionalInvoiceWithChanges = ({ invoiceData, originalInvoiceData, invo
                 const originalItem = originalData.products?.[index] || {};
                 return (
                   <tr key={`edited-invoice-item-${item.product_id || index}`} className="border-b border-gray-200">
-                    <td className="py-3 px-4">
-                      <div className="font-medium text-gray-900">
-                        {renderWithHighlight(item.name, originalItem.name, 'font-medium text-gray-900')}
+                    <td className="py-2 lg:py-3 px-2 lg:px-4">
+                      <div className="font-medium text-gray-900 text-xs lg:text-sm">
+                        {renderWithHighlight(item.name, originalItem.name, 'font-medium text-gray-900 text-xs lg:text-sm')}
                       </div>
                       {item.description && (
-                        <div className="text-sm text-gray-600 mt-1">
-                          {renderWithHighlight(item.description, originalItem.description, 'text-sm text-gray-600 mt-1')}
+                        <div className="text-xs lg:text-sm text-gray-600 mt-1">
+                          {renderWithHighlight(item.description, originalItem.description, 'text-xs lg:text-sm text-gray-600 mt-1')}
                         </div>
                       )}
                       {item.climate_zone && (
@@ -884,14 +897,14 @@ const ProfessionalInvoiceWithChanges = ({ invoiceData, originalInvoiceData, invo
                         </div>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-center text-gray-900">
-                      {renderWithHighlight(item.quantity, originalItem.quantity, 'text-center text-gray-900')}
+                    <td className="py-2 lg:py-3 px-2 lg:px-4 text-center text-gray-900 text-xs lg:text-sm">
+                      {renderWithHighlight(item.quantity, originalItem.quantity, 'text-center text-gray-900 text-xs lg:text-sm')}
                     </td>
-                    <td className="py-3 px-4 text-right text-gray-900">
-                      €{renderWithHighlight((item.unit_price || 0).toFixed(2), (originalItem.unit_price || 0).toFixed(2), 'text-right text-gray-900')}
+                    <td className="py-2 lg:py-3 px-2 lg:px-4 text-right text-gray-900 text-xs lg:text-sm">
+                      €{renderWithHighlight((item.unit_price || 0).toFixed(2), (originalItem.unit_price || 0).toFixed(2), 'text-right text-gray-900 text-xs lg:text-sm')}
                     </td>
-                    <td className="py-3 px-4 text-right text-gray-900 font-medium">
-                      €{renderWithHighlight((item.total_price || 0).toFixed(2), (originalItem.total_price || 0).toFixed(2), 'text-right text-gray-900 font-medium')}
+                    <td className="py-2 lg:py-3 px-2 lg:px-4 text-right text-gray-900 font-medium text-xs lg:text-sm">
+                      €{renderWithHighlight((item.total_price || 0).toFixed(2), (originalItem.total_price || 0).toFixed(2), 'text-right text-gray-900 font-medium text-xs lg:text-sm')}
                     </td>
                   </tr>
                 );
@@ -901,27 +914,27 @@ const ProfessionalInvoiceWithChanges = ({ invoiceData, originalInvoiceData, invo
         </div>
 
         {/* Totals Section */}
-        <div className="flex justify-end mb-8">
-          <div className="w-80">
+        <div className="flex justify-center lg:justify-end mb-6 lg:mb-8">
+          <div className="w-full max-w-sm lg:w-80">
             <div className="space-y-2">
               <div className="flex justify-between py-2 border-b border-gray-200">
-                <span className="text-gray-700">Subtotal:</span>
-                <span className="text-gray-900 font-medium">
-                  €{renderWithHighlight((data.subtotal || 0).toFixed(2), (originalData.subtotal || 0).toFixed(2), 'text-gray-900 font-medium')}
+                <span className="text-gray-700 text-xs lg:text-sm">Subtotal:</span>
+                <span className="text-gray-900 font-medium text-xs lg:text-sm">
+                  €{renderWithHighlight((data.subtotal || 0).toFixed(2), (originalData.subtotal || 0).toFixed(2), 'text-gray-900 font-medium text-xs lg:text-sm')}
                 </span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-200">
-                <span className="text-gray-700">
+                <span className="text-gray-700 text-xs lg:text-sm">
                   Tax ({renderWithHighlight(((data.tax_rate || 0) * 100).toFixed(1), ((originalData.tax_rate || 0) * 100).toFixed(1))}%):
                 </span>
-                <span className="text-gray-900 font-medium">
-                  €{renderWithHighlight((data.tax_amount || 0).toFixed(2), (originalData.tax_amount || 0).toFixed(2), 'text-gray-900 font-medium')}
+                <span className="text-gray-900 font-medium text-xs lg:text-sm">
+                  €{renderWithHighlight((data.tax_amount || 0).toFixed(2), (originalData.tax_amount || 0).toFixed(2), 'text-gray-900 font-medium text-xs lg:text-sm')}
                 </span>
               </div>
               <div className="flex justify-between py-3 border-t-2 border-gray-300">
-                <span className="text-lg font-bold text-gray-900">Total Amount:</span>
-                <span className="text-lg font-bold text-gray-900">
-                  €{renderWithHighlight((data.total_amount || 0).toFixed(2), (originalData.total_amount || 0).toFixed(2), 'text-lg font-bold text-gray-900')}
+                <span className="text-base lg:text-lg font-bold text-gray-900">Total Amount:</span>
+                <span className="text-base lg:text-lg font-bold text-gray-900">
+                  €{renderWithHighlight((data.total_amount || 0).toFixed(2), (originalData.total_amount || 0).toFixed(2), 'text-base lg:text-lg font-bold text-gray-900')}
                 </span>
               </div>
             </div>
@@ -955,7 +968,7 @@ const ProfessionalInvoiceWithChanges = ({ invoiceData, originalInvoiceData, invo
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-center mt-8 gap-4 print:hidden">
+        <div className="flex flex-col sm:flex-row justify-center mt-6 lg:mt-8 gap-2 sm:gap-4 print:hidden px-4">
           <button
             onClick={() => {
               // Create a clean print view for edited invoice
@@ -1157,7 +1170,7 @@ const ProfessionalInvoiceWithChanges = ({ invoiceData, originalInvoiceData, invo
                 printWindow.close();
               }, 250);
             }}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm lg:text-base"
           >
             Print Invoice
           </button>
@@ -1377,7 +1390,7 @@ const ProfessionalInvoiceWithChanges = ({ invoiceData, originalInvoiceData, invo
                 element.click();
               }
             }}
-            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            className="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm lg:text-base"
           >
             Download PDF
           </button>
@@ -1445,20 +1458,20 @@ const MessageBubble = ({ message, onProductSelect, onInvoiceUpdate, onInvoiceFin
   };
 
   return (
-    <div className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} mb-6`}>
-      <div className={`max-w-4xl rounded-xl p-4 shadow-lg ${
+    <div className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} mb-4 lg:mb-6 px-2 lg:px-0`}>
+      <div className={`max-w-full lg:max-w-4xl rounded-xl p-3 lg:p-4 shadow-lg ${
         message.sender === 'user' 
-          ? 'bg-blue-600 text-white ml-8' 
+          ? 'bg-blue-600 text-white ml-4 lg:ml-8' 
           : message.type === 'error' 
-          ? 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800 mr-8'
+          ? 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800 mr-4 lg:mr-8'
           : message.type === 'warning'
-          ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800 mr-8'
-          : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white mr-8'
+          ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800 mr-4 lg:mr-8'
+          : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white mr-4 lg:mr-8'
       }`}>
         <div className="flex items-start">
           {message.sender === 'assistant' && (
-            <div className="mr-3 mt-1 flex-shrink-0">
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+            <div className="mr-2 lg:mr-3 mt-1 flex-shrink-0">
+              <div className={`h-6 w-6 lg:h-8 lg:w-8 rounded-full flex items-center justify-center ${
                 message.type === 'error' 
                   ? 'bg-red-500'
                   : message.type === 'warning'
@@ -1472,29 +1485,29 @@ const MessageBubble = ({ message, onProductSelect, onInvoiceUpdate, onInvoiceFin
             </div>
           )}
           
-          <div className="flex-1">
-            <div className="flex items-center mb-2">
-              <span className="font-semibold mr-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center mb-1 lg:mb-2 flex-wrap">
+              <span className="font-semibold mr-2 text-sm lg:text-base">
                 {message.sender === 'user' ? 'You' : 'Assistant'}
               </span>
               <span className="text-xs opacity-70">{message.timestamp}</span>
               {message.isOffline && (
-                <span className="ml-2 px-2 py-1 text-xs bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 rounded-full">
+                <span className="ml-1 lg:ml-2 px-1.5 lg:px-2 py-0.5 lg:py-1 text-xs bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 rounded-full">
                   Offline Mode
                 </span>
               )}
             </div>
             
             {message.text && (
-              <div className="whitespace-pre-wrap mb-3">{message.text}</div>
+              <div className="whitespace-pre-wrap mb-2 lg:mb-3 text-sm lg:text-base break-words">{message.text}</div>
             )}
             
             {renderSpecialContent()}
           </div>
           
           {message.sender === 'user' && (
-            <div className="ml-3 mt-1 flex-shrink-0">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-r from-green-500 to-teal-500 flex items-center justify-center">
+            <div className="ml-2 lg:ml-3 mt-1 flex-shrink-0">
+              <div className="h-6 w-6 lg:h-8 lg:w-8 rounded-full bg-gradient-to-r from-green-500 to-teal-500 flex items-center justify-center">
                 <span className="text-white text-xs font-bold">You</span>
               </div>
             </div>

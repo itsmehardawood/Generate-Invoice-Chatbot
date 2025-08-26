@@ -32,21 +32,20 @@ const ProductSelection = ({ products, selectedProducts = [], onSelectionChange, 
     return products
       .filter(product => selections.includes(product.id))
       .reduce((total, product) => {
-        // Handle both backend field names and frontend field names
+        // Only sum the product price, exclude installation
         const price = product.totale || product.price || 0;
-        const installation = product.installazione || product.installation || 0;
-        return total + price + installation;
+        return total + price;
       }, 0);
   };
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+    <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-3 lg:p-6 border border-gray-200 dark:border-gray-700">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
+        <h3 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-white">
           Select Products for Invoice
         </h3>
         {isOffline && (
-          <span className="px-3 py-1 text-xs bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 rounded-full">
+          <span className="px-2 lg:px-3 py-1 text-xs bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 rounded-full">
             Sample Data - Backend Offline
           </span>
         )}
@@ -60,8 +59,67 @@ const ProductSelection = ({ products, selectedProducts = [], onSelectionChange, 
         </div>
       )}
       
-      <div className="overflow-x-auto">
-        <table className="w-full">
+      {/* Mobile Card Layout */}
+      <div className={`block lg:hidden space-y-3 ${products.length > 4 ? 'max-h-96 overflow-y-auto' : ''}`}>
+        {products.map((product, index) => (
+          <div 
+            key={`product-mobile-${product.id}-${index}`}
+            className={`border border-gray-200 dark:border-gray-700 rounded-lg p-3 transition-colors ${
+              selections.includes(product.id) ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300' : 'bg-white dark:bg-gray-800'
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                checked={selections.includes(product.id)}
+                onChange={() => handleProductToggle(product.id)}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 mt-1"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-gray-900 dark:text-white text-sm">
+                  {product.P_name || product.name}
+                </div>
+                {(product.P_code || product.code) && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Code: {product.P_code || product.code}
+                  </div>
+                )}
+                {product.description && (
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                    {product.description}
+                  </div>
+                )}
+                <div className="flex items-center justify-between mt-2">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      €{(product.totale || product.price || 0).toFixed(2)}
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      +€{(product.installazione || product.installation || 0).toFixed(2)} install
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    {product.climate_zone && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                        Zone {product.climate_zone}
+                      </span>
+                    )}
+                    {product.similarity_score && (
+                      <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                        {(product.similarity_score * 100).toFixed(0)}% match
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Table Layout */}
+      <div className={`hidden lg:block overflow-x-auto ${products.length > 4 ? 'max-h-96 overflow-y-auto' : ''}`}>
+        <table className="w-full min-w-[600px]">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-700">
               <th className="text-left py-3 px-2 text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -143,16 +201,16 @@ const ProductSelection = ({ products, selectedProducts = [], onSelectionChange, 
         </table>
       </div>
       
-      <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex justify-between items-center">
-          <div>
+      <div className="mt-4 lg:mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+          <div className="text-center sm:text-left">
             <span className="text-sm text-gray-600 dark:text-gray-400">
               {selections.length} product{selections.length !== 1 ? 's' : ''} selected
             </span>
             {selections.length > 0 && (
-              <div className="text-lg font-semibold text-gray-900 dark:text-white mt-1">
+              <div className="text-base lg:text-lg font-semibold text-gray-900 dark:text-white mt-1">
                 Total: €{calculateTotal().toFixed(2)}
-                <div className="text-sm text-gray-600 dark:text-gray-400 font-normal">
+                <div className="text-xs lg:text-sm text-gray-600 dark:text-gray-400 font-normal">
                   (Including installation)
                 </div>
               </div>
@@ -162,9 +220,9 @@ const ProductSelection = ({ products, selectedProducts = [], onSelectionChange, 
           <button
             onClick={handleProceed}
             disabled={selections.length === 0}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 lg:px-6 py-2 rounded-lg font-medium transition-colors text-sm lg:text-base w-full sm:w-auto ${
               selections.length > 0
-                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                ? 'bg-blue-600 hover:bg-blue-700 text-white active:scale-95'
                 : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
             }`}
           >

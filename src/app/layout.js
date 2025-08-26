@@ -16,6 +16,11 @@ export const metadata = {
   description: "A chatbot for generating invoices to help individuals and businesses streamline their billing processes.",
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
