@@ -1520,15 +1520,15 @@ const MessageBubble = ({ message, onProductSelect, onInvoiceUpdate, onInvoiceFin
         <div className="flex items-start">
           {message.sender === 'assistant' && (
             <div className="mr-2 lg:mr-3 mt-1 flex-shrink-0">
-              <div className={`h-6 w-6 lg:h-8 lg:w-8 rounded-full flex items-center justify-center ${
+              <div className={`h-7 w-7 lg:h-8 lg:w-8 rounded-full flex items-center justify-center ${
                 message.type === 'error' 
                   ? 'bg-red-500'
                   : message.type === 'warning'
                   ? 'bg-yellow-500'
-                  : 'bg-gradient-to-r from-purple-500 to-blue-500'
+                  : 'bg-gradient-to-r from-green-700 to-blue-500'
               }`}>
                 <span className="text-white text-xs font-bold">
-                  {message.type === 'error' ? '⚠' : 'AI'}
+                  {message.type === 'error' ? '⚠' : 'G'}
                 </span>
               </div>
             </div>
@@ -1536,8 +1536,8 @@ const MessageBubble = ({ message, onProductSelect, onInvoiceUpdate, onInvoiceFin
           
           <div className="flex-1 min-w-0">
             <div className="flex items-center mb-1 lg:mb-2 flex-wrap">
-              <span className="font-semibold mr-2 text-sm lg:text-base">
-                {message.sender === 'user' ? 'You' : 'Assistant'}
+              <span className="font-semibold  mr-2 text-sm lg:text-base">
+                {message.sender === 'user' ? 'You' : 'GreenGenius'}
               </span>
               <span className="text-xs opacity-70">{message.timestamp}</span>
               {message.isOffline && (
@@ -1556,7 +1556,7 @@ const MessageBubble = ({ message, onProductSelect, onInvoiceUpdate, onInvoiceFin
           
           {message.sender === 'user' && (
             <div className="ml-2 lg:ml-3 mt-1 flex-shrink-0">
-              <div className="h-6 w-6 lg:h-8 lg:w-8 rounded-full bg-gradient-to-r from-green-500 to-teal-500 flex items-center justify-center">
+              <div className="h-7 w-7 lg:h-8 lg:w-8 rounded-full bg-gradient-to-r from-green-500 to-teal-500 flex items-center justify-center">
                 <span className="text-white text-xs font-bold">You</span>
               </div>
             </div>

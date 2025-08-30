@@ -495,11 +495,7 @@ const ChatWindow = ({
     setIsLoading(true);
     
     try {
-      if (!backendConnected || !queryId) {
-        // Fallback for offline mode
-        handleOfflineProductSelection(selectedProducts);
-        return;
-      }
+   
 
       // Call backend to create invoice draft
       const draftResult = await selectProducts(queryId, selectedProducts);
@@ -533,50 +529,7 @@ const ChatWindow = ({
     }
   };
 
-  const handleOfflineProductSelection = (selectedProducts) => {
-    const sampleProducts = [
-      { id: 1, name: 'Web Development', description: 'Custom website development', price: 2500.00 },
-      { id: 2, name: 'Logo Design', description: 'Professional logo design', price: 500.00 },
-      { id: 3, name: 'SEO Optimization', description: 'Search engine optimization', price: 800.00 },
-      { id: 4, name: 'Content Writing', description: 'Professional content creation', price: 300.00 },
-      { id: 5, name: 'Social Media Setup', description: 'Social media account setup and branding', price: 400.00 }
-    ];
-
-    const selectedItems = sampleProducts.filter(p => selectedProducts.includes(p.id));
-    
-    setTimeout(() => {
-      const aiResponse = {
-        id: Date.now(),
-        text: "⚠️ Offline mode - showing sample invoice preview:",
-        sender: 'assistant',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        type: 'invoice-preview',
-        invoiceData: {
-          invoiceNumber: `INV-${Date.now()}`,
-          date: new Date().toISOString().split('T')[0],
-          dueDate: '',
-          billTo: { name: '', company: '', address: '', city: '', state: '', zip: '', email: '' },
-          billFrom: { 
-            name: 'Your Company Name', 
-            company: 'Your Company', 
-            address: '123 Business St', 
-            city: 'Business City', 
-            state: 'State', 
-            zip: '12345', 
-            email: 'contact@yourcompany.com' 
-          },
-          items: selectedItems.map(item => ({ ...item, quantity: 1 })),
-          taxRate: 8.5,
-          notes: 'Thank you for your business!'
-        },
-        isOffline: true
-      };
-      
-      setMessages(prev => [...prev, aiResponse]);
-      setIsLoading(false);
-    }, 1000);
-  };
-
+ 
   const handleInvoiceUpdate = (invoiceData) => {
     // Handle invoice updates (save to local state)
     console.log('Invoice updated:', invoiceData);

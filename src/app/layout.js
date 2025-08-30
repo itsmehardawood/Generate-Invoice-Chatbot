@@ -12,7 +12,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Invoice Generator Chatbot",
+  title: "GreenGenius Bot",
   description: "A chatbot for generating invoices to help individuals and businesses streamline their billing processes.",
 };
 
@@ -24,9 +24,14 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/images/greengen.jpeg" type="image/jpeg" />
+        {/* <title>Green Generator Chatbot</title> */}
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* ...existing code... */}
         {children}
       </body>
     </html>

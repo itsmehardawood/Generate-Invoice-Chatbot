@@ -9,6 +9,7 @@ import {
   logout,
   deleteSession 
 } from '../utils/api';
+import Link from 'next/link';
 
 const Sidebar = ({ 
   onClose, 
@@ -235,11 +236,11 @@ const Sidebar = ({
       {/* App Name */}
       <div className="p-4 border-b text-center border-gray-800">
         {!isCollapsed ? (
-          <h1 className="text-xl font-bold text-green-500 tracking-wide">
+          <Link href="/" className="text-xl font-bold text-green-500 tracking-wide">
             GreenGenius Bot
-          </h1>
+          </Link>
         ) : (
-          <h1 className="text-lg font-bold text-green-500">G</h1>
+          <Link href="/" className="text-lg font-bold text-green-500">G</Link>
         )}
       </div>
 
@@ -439,3 +440,5 @@ const Sidebar = ({
 };
 
 export default Sidebar;
+
+
