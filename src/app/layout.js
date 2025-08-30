@@ -25,7 +25,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/images/greengen.jpeg" type="image/jpeg" />
+        <link rel="icon" href="/images/png_logo.png" type="image/png" />
         {/* <title>Green Generator Chatbot</title> */}
       </head>
       <body
