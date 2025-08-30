@@ -13,9 +13,12 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "GreenGenius Bot",
-  description: "A chatbot for generating invoices to help individuals and businesses streamline their billing processes.",
-    icons: {
-    icon: "/images/png_logo.png", // this must be inside /public/images/
+  description:
+    "A chatbot for generating invoices to help individuals and businesses streamline their billing processes.",
+  icons: {
+    icon: "/images/png_logo.png",       // 32×32 or 48×48 PNG works best
+    shortcut: "/images/png_logo.png",   // for older browsers
+    apple: "/images/png_logo.png",      // for iOS home screen
   },
 };
 
