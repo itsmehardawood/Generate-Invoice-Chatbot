@@ -2,23 +2,25 @@
 
 import { useState, useRef, useEffect } from 'react';
 import MessageBubble from './MessageBubble';
-import { parseQuery, selectProducts, createInvoice, editInvoice, checkBackendHealth } from '../utils/api';
+import { parseQuery, selectProducts, createInvoice, editInvoice, checkBackendHealth, isAuthenticated } from '../utils/api';
 
-const ChatWindow = ({ isSidebarCollapsed = false }) => {
-  const [messages, setMessages] = useState([
-    { 
-      id: 1, 
-      text: "Hi I'm your invoice generation assistant. I can help you create professional invoices. Please describe what products or services you need to invoice, and I'll help you get started!", 
-      sender: "assistant", 
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    },
-  ]);
+const ChatWindow = ({ 
+  isSidebarCollapsed = false,
+  onAuthRequired,
+  onNewChatStarted,
+  currentSessionId,
+  sessionMessages = [],
+  user
+}) => {
+  const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [backendConnected, setBackendConnected] = useState(false);
   const [currentQueryId, setCurrentQueryId] = useState(null);
   const [currentDraftId, setCurrentDraftId] = useState(null);
   const [storedInvoices, setStoredInvoices] = useState(new Map()); // Store invoices by ID for editing
+  const [hasStartedChat, setHasStartedChat] = useState(false);
+  const [isLoadingSession, setIsLoadingSession] = useState(false);
   
   // Enhanced app state for context-aware intent detection
   const [appState, setAppState] = useState({
@@ -31,7 +33,35 @@ const ChatWindow = ({ isSidebarCollapsed = false }) => {
   });
   
   const messagesEndRef = useRef(null);
-  const [currentChat, setCurrentChat] = useState(null);
+
+  // Initialize messages based on session
+  useEffect(() => {
+    if (currentSessionId && sessionMessages.length > 0) {
+      // Load messages from session
+      console.log('Loading session messages into ChatWindow:', sessionMessages);
+      setMessages(sessionMessages);
+      setHasStartedChat(true);
+      setIsLoadingSession(false);
+    } else if (currentSessionId) {
+      // Session selected but no messages yet - show loading
+      setIsLoadingSession(true);
+      // The loadSessionMessages function will handle setting the welcome message
+    } else {
+      // No session selected, show main welcome message
+      setMessages([
+        { 
+          id: 1, 
+          text: isAuthenticated() 
+            ? `Hi ${user?.name || 'there'}! I'm your invoice generation assistant. I can help you create professional invoices. Please describe what products or services you need to invoice, and I'll help you get started!`
+            : "Hi! I'm your invoice generation assistant. I can help you create professional invoices. Please sign in to save your chat history and access all features, or continue as a guest with limited functionality.", 
+          sender: "assistant", 
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        },
+      ]);
+      setHasStartedChat(false);
+      setIsLoadingSession(false);
+    }
+  }, [currentSessionId, sessionMessages, user]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -50,7 +80,7 @@ const ChatWindow = ({ isSidebarCollapsed = false }) => {
       if (!isConnected) {
         setMessages(prev => [...prev, {
           id: Date.now(),
-          text: "⚠️ Backend connection unavailable. Please ensure your FastAPI server is running at https://greengenius.crm-labloid.com",
+          text: "⚠️ Backend connection unavailable. Please ensure your FastAPI server is running at http://localhost:8000",
           sender: "assistant",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           type: 'error'
@@ -329,6 +359,30 @@ const ChatWindow = ({ isSidebarCollapsed = false }) => {
     e.preventDefault();
     if (inputText.trim() === '') return;
 
+    // Check if user is authenticated and needs to create a session
+    if (!isAuthenticated()) {
+      onAuthRequired?.();
+      return;
+    }
+
+    // If this is the first message in a new chat session, create the session
+    if (!hasStartedChat && !currentSessionId) {
+      const sessionId = await onNewChatStarted?.(inputText.trim());
+      if (!sessionId) {
+        // Failed to create session, show error
+        const errorMessage = {
+          id: Date.now(),
+          text: 'Failed to create chat session. Please try again.',
+          sender: 'assistant',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: 'error'
+        };
+        setMessages(prev => [...prev, errorMessage]);
+        return;
+      }
+      setHasStartedChat(true);
+    }
+
     // Add user message
     const newUserMessage = {
       id: Date.now(),
@@ -347,6 +401,12 @@ const ChatWindow = ({ isSidebarCollapsed = false }) => {
       await handleSmartInput(userInput);
     } catch (error) {
       console.error('Error sending message:', error);
+      
+      // Check if it's an authentication error
+      if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        onAuthRequired?.();
+        return;
+      }
       
       const errorMessage = {
         id: Date.now() + 1,
@@ -406,7 +466,7 @@ const ChatWindow = ({ isSidebarCollapsed = false }) => {
       else {
         aiResponse = {
           id: Date.now() + 1,
-          text: "⚠️ Backend connection unavailable. I'm running in offline mode with limited functionality. Please ensure your FastAPI server is running at  https://greengenius.crm-labloid.com for full features including product search and smart chat responses.",
+          text: "⚠️ Backend connection unavailable. I'm running in offline mode with limited functionality. Please ensure your FastAPI server is running at http://localhost:8000 for full features including product search and smart chat responses.",
           sender: 'assistant',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           type: 'error'
@@ -670,7 +730,18 @@ const ChatWindow = ({ isSidebarCollapsed = false }) => {
 
       {/* Messages Area - Different padding for mobile vs desktop */}
       <div className="flex-1 overflow-y-auto p-2 lg:p-4 lg:pt-20">
-        {messages.length === 1 ? (
+        {isLoadingSession ? (
+          /* Loading Session Messages */
+          <div className="flex flex-col items-center justify-center h-full">
+            <div className="flex items-center justify-center mb-4">
+              <svg className="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400">Loading conversation...</p>
+          </div>
+        ) : messages.length === 1 ? (
           /* Welcome Message */
           <div className="flex flex-col items-center justify-center h-full pb-8 lg:pb-16 px-4">
             <div className="mb-6 lg:mb-8 text-center max-w-md">

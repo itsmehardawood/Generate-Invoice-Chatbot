@@ -51,63 +51,103 @@ const InlineInvoicePreview = ({ invoiceData, onUpdate, onFinalize, isOffline = f
         </div>
       </div>
 
+      {/* Total Amount Highlight */}
+      {invoiceData?.total && (
+        <div className="mb-4 lg:mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold text-green-800 dark:text-green-200">
+                {invoiceData.draftId ? 'Draft Total' : 'Invoice Total'}
+              </h3>
+              {invoiceData.productCount && (
+                <p className="text-sm text-green-600 dark:text-green-300">
+                  {invoiceData.productCount} products selected
+                </p>
+              )}
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-green-800 dark:text-green-200">
+                €{(invoiceData.total || 0).toFixed(2)}
+              </div>
+              {invoiceData.draftId && (
+                <div className="text-xs text-green-600 dark:text-green-400">
+                  Draft ID: {invoiceData.draftId}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Selected Products Summary */}
       <div className="mb-4 lg:mb-6">
         <h3 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-white mb-3">Selected Products</h3>
         
-        {/* Mobile Card Layout */}
-        <div className="block lg:hidden space-y-3">
-          {(invoiceData?.products || []).map((item, index) => (
-            <div key={`preview-mobile-item-${item.product_id || index}`} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
-              <div className="font-medium text-gray-900 dark:text-white text-sm mb-2">
-                {item.name}
-                {item.description && (
-                  <div className="text-xs text-gray-500 dark:text-gray-400 font-normal mt-1">{item.description}</div>
-                )}
-                {item.climate_zone && (
-                  <div className="text-xs text-blue-600 dark:text-blue-400 font-normal mt-1">Zone: {item.climate_zone}</div>
-                )}
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Qty: {item.quantity}</span>
-                <span className="text-gray-600 dark:text-gray-400">€{(item.unit_price || 0).toFixed(2)}</span>
-                <span className="font-semibold text-gray-900 dark:text-white">€{(item.total_price || 0).toFixed(2)}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Desktop Table Layout */}
-        <div className="hidden lg:block overflow-x-auto">
-          <table className="w-full border-collapse min-w-[480px]">
-            <thead>
-              <tr className="border-b-2 border-gray-200 dark:border-gray-700">
-                <th className="text-left py-2 text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">Item</th>
-                <th className="text-center py-2 text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">Qty</th>
-                <th className="text-right py-2 text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">Unit Price</th>
-                <th className="text-right py-2 text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(invoiceData?.products || []).map((item, index) => (
-                <tr key={`preview-item-${item.product_id || index}`} className="border-b border-gray-100 dark:border-gray-800">
-                  <td className="py-2 text-gray-900 dark:text-white">
-                    <div className="font-medium text-sm lg:text-base">{item.name}</div>
+        {/* Check if products exist and is an array */}
+        {(!invoiceData?.products || !Array.isArray(invoiceData.products) || invoiceData.products.length === 0) ? (
+          <div className="text-gray-600 dark:text-gray-400 text-sm">
+            {invoiceData?.productCount ? 
+              `${invoiceData.productCount} products selected (details not available in this view)` : 
+              'No products available'
+            }
+          </div>
+        ) : (
+          <>
+            {/* Mobile Card Layout */}
+            <div className="block lg:hidden space-y-3">
+              {invoiceData.products.map((item, index) => (
+                <div key={`preview-mobile-item-${item.product_id || index}`} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
+                  <div className="font-medium text-gray-900 dark:text-white text-sm mb-2">
+                    {item.name}
                     {item.description && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400">{item.description}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 font-normal mt-1">{item.description}</div>
                     )}
                     {item.climate_zone && (
-                      <div className="text-xs text-blue-600 dark:text-blue-400">Zone: {item.climate_zone}</div>
+                      <div className="text-xs text-blue-600 dark:text-blue-400 font-normal mt-1">Zone: {item.climate_zone}</div>
                     )}
-                  </td>
-                  <td className="py-2 text-center text-gray-900 dark:text-white text-sm lg:text-base">{item.quantity}</td>
-                  <td className="py-2 text-right text-gray-900 dark:text-white text-sm lg:text-base">€{(item.unit_price || 0).toFixed(2)}</td>
-                  <td className="py-2 text-right text-gray-900 dark:text-white text-sm lg:text-base">€{(item.total_price || (item.quantity * item.unit_price) || 0).toFixed(2)}</td>
-                </tr>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">Qty: {item.quantity}</span>
+                    <span className="text-gray-600 dark:text-gray-400">€{(item.unit_price || 0).toFixed(2)}</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">€{(item.total_price || 0).toFixed(2)}</span>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </div>
+
+            {/* Desktop Table Layout */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full border-collapse min-w-[480px]">
+                <thead>
+                  <tr className="border-b-2 border-gray-200 dark:border-gray-700">
+                    <th className="text-left py-2 text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">Item</th>
+                    <th className="text-center py-2 text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">Qty</th>
+                    <th className="text-right py-2 text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">Unit Price</th>
+                    <th className="text-right py-2 text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoiceData.products.map((item, index) => (
+                    <tr key={`preview-item-${item.product_id || index}`} className="border-b border-gray-100 dark:border-gray-800">
+                      <td className="py-2 text-gray-900 dark:text-white">
+                        <div className="font-medium text-sm lg:text-base">{item.name}</div>
+                        {item.description && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{item.description}</div>
+                        )}
+                        {item.climate_zone && (
+                          <div className="text-xs text-blue-600 dark:text-blue-400">Zone: {item.climate_zone}</div>
+                        )}
+                      </td>
+                      <td className="py-2 text-center text-gray-900 dark:text-white text-sm lg:text-base">{item.quantity}</td>
+                      <td className="py-2 text-right text-gray-900 dark:text-white text-sm lg:text-base">€{(item.unit_price || 0).toFixed(2)}</td>
+                      <td className="py-2 text-right text-gray-900 dark:text-white text-sm lg:text-base">€{(item.total_price || (item.quantity * item.unit_price) || 0).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
         
         {/* Totals Summary */}
@@ -116,15 +156,15 @@ const InlineInvoicePreview = ({ invoiceData, onUpdate, onFinalize, isOffline = f
             <div className="w-64 space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Subtotal:</span>
-                <span className="text-gray-900 dark:text-white">€{(invoiceData?.subtotal || 0).toFixed(2)}</span>
+                <span className="text-gray-900 dark:text-white">€{(invoiceData?.subtotal || invoiceData?.total || 0).toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Tax ({((invoiceData?.tax_rate || 0.22) * 100).toFixed(1)}%):</span>
+                <span className="text-gray-600 dark:text-gray-400">Tax ({((invoiceData?.tax_rate || invoiceData?.taxRate || 0.085) * 100).toFixed(1)}%):</span>
                 <span className="text-gray-900 dark:text-white">€{(invoiceData?.tax_amount || 0).toFixed(2)}</span>
               </div>
               <div className="flex justify-between font-bold text-lg border-t border-gray-200 dark:border-gray-700 pt-2">
                 <span className="text-gray-900 dark:text-white">Total:</span>
-                <span className="text-gray-900 dark:text-white">€{(invoiceData?.total_amount || 0).toFixed(2)}</span>
+                <span className="text-gray-900 dark:text-white">€{(invoiceData?.total_amount || invoiceData?.total || 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -260,6 +300,15 @@ const ProfessionalInvoice = ({ invoiceData, invoiceId, isOffline = false }) => {
               <p><span className="font-semibold">Date:</span> {formatDate(invoiceData.created_at)}</p>
               <p><span className="font-semibold">Status:</span> <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">{invoiceData.status?.toUpperCase()}</span></p>
             </div>
+            {/* Prominent Total Display */}
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="text-center lg:text-right">
+                <div className="text-xs text-green-600 font-medium">TOTAL AMOUNT</div>
+                <div className="text-xl lg:text-2xl font-bold text-green-800">
+                  €{(data.total_amount || data.total || 0).toFixed(2)}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -324,7 +373,7 @@ const ProfessionalInvoice = ({ invoiceData, invoiceId, isOffline = false }) => {
             <div className="space-y-2">
               <div className="flex justify-between py-2 border-b border-gray-200">
                 <span className="text-gray-700">Subtotal:</span>
-                <span className="text-gray-900 font-medium">€{(data.subtotal || 0).toFixed(2)}</span>
+                <span className="text-gray-900 font-medium">€{(data.subtotal || data.total || 0).toFixed(2)}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-200">
                 <span className="text-gray-700">Tax ({((data.tax_rate || 0) * 100).toFixed(1)}%):</span>
@@ -332,7 +381,7 @@ const ProfessionalInvoice = ({ invoiceData, invoiceId, isOffline = false }) => {
               </div>
               <div className="flex justify-between py-3 border-t-2 border-gray-300">
                 <span className="text-lg font-bold text-gray-900">Total Amount:</span>
-                <span className="text-lg font-bold text-gray-900">€{(data.total_amount || 0).toFixed(2)}</span>
+                <span className="text-lg font-bold text-gray-900">€{(data.total_amount || data.total || 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
