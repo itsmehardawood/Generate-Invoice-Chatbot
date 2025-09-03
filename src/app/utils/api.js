@@ -257,6 +257,34 @@ export const generateChatTitle = (query) => {
   return title || 'New Chat';
 };
 
+// Transform backend products to frontend format
+export const transformProductsToFrontend = (backendProducts) => {
+  if (!Array.isArray(backendProducts)) return [];
+  
+  return backendProducts.map(product => ({
+    id: product.id,
+    name: product.tipo || product.name || `Product ${product.id}`, // Ensure name is set from tipo
+    code: product.P_code || product.code || '',
+    description: product.descrizione_titolo || product.description || `${product.tipo || 'Product'} - Climate Zone ${product.zona_clim || 'N/A'}`,
+    fullDescription: product.descrizione || '',
+    price: product.totale || product.price || 0,
+    installation: product.installaz || product.installation || 0,
+    climate_zone: product.zona_clim || product.climate_zone,
+    similarity_score: product.similarity_score,
+    unit_price: product.totale || product.price || 0, // Add unit_price for invoice preview
+    total_price: product.totale || product.price || 0, // Add total_price for invoice preview
+    quantity: 1, // Default quantity
+    // Backend specific fields
+    tipo: product.tipo,
+    immagine: product.immagine,
+    zona_clim: product.zona_clim,
+    totale: product.totale,
+    installaz: product.installaz,
+    descrizione_titolo: product.descrizione_titolo,
+    descrizione: product.descrizione
+  }));
+};
+
 // Transform backend message format to frontend format
 export const transformBackendMessages = (backendMessages) => {
   if (!Array.isArray(backendMessages)) return [];
@@ -273,16 +301,7 @@ export const transformBackendMessages = (backendMessages) => {
     switch (msg.message_type) {
       case 'product_search':
         transformedMessage.type = 'product-selection';
-        transformedMessage.products = msg.metadata?.products?.map(product => ({
-          id: product.id,
-          name: product.P_name || product.name || `Product ${product.id}`,
-          code: product.P_code || product.code || '',
-          description: product.description || `Product ${product.id} - Climate Zone ${product.climate_zone || 'N/A'}`,
-          price: product.totale || product.price || 0,
-          installation: product.installazione || product.installation || 0,
-          climate_zone: product.climate_zone,
-          similarity_score: product.similarity_score
-        })) || [];
+        transformedMessage.products = transformProductsToFrontend(msg.metadata?.products || []);
         transformedMessage.queryId = msg.metadata?.query_id;
         transformedMessage.selectedProducts = []; // This will be populated if we track selections
         break;
@@ -420,6 +439,20 @@ export const selectProducts = async (queryId, selectedProductIds) => {
     }
     
     const result = await response.json();
+    
+    // Transform product data if available in the response
+    if (result.invoice_data && Array.isArray(result.invoice_data.products)) {
+      // Transform products to ensure they have the expected frontend fields
+      result.invoice_data.products = result.invoice_data.products.map(product => ({
+        ...product,
+        name: product.tipo || product.name || `Product ${product.id}`,
+        description: product.descrizione_titolo || product.description,
+        climate_zone: product.zona_clim || product.climate_zone,
+        unit_price: product.totale || product.price || 0,
+        total_price: (product.quantity || 1) * (product.totale || product.price || 0),
+      }));
+    }
+    
     return result;
   } catch (error) {
     console.error('Select products error:', error);

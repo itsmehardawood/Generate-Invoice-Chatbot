@@ -227,6 +227,8 @@ const ChatWindow = ({
           createdAt: lastInvoice.created_at
         };
         
+        console.log('✅ Edit invoice response:', { updatedInvoice, lastInvoice, aiResponse });
+        
         setMessages(prev => [...prev, aiResponse]);
         return true;
       }
@@ -290,16 +292,25 @@ const ChatWindow = ({
         // Set the current query ID for product selection
         setCurrentQueryId(parseResult.query_id);
         
-        // Transform backend products to frontend format if needed
+        // Transform backend products to frontend format using the correct field mappings
         const transformedProducts = parseResult.matched_products?.map(product => ({
           id: product.id,
-          name: product.P_name || product.name,
+          name: product.tipo || product.name,
           code: product.P_code || product.code,
-          description: product.description || `${product.P_name || product.name} - Climate Zone ${product.climate_zone || 'N/A'}`,
+          description: product.descrizione_titolo || product.description || `${product.tipo || product.name} - Climate Zone ${product.zona_clim || product.climate_zone || 'N/A'}`,
+          fullDescription: product.descrizione || '',
           price: product.totale || product.price || 0,
-          installation: product.installazione || product.installation || 0,
-          climate_zone: product.climate_zone,
-          similarity_score: product.similarity_score
+          installation: product.installaz || product.installation || 0,
+          climate_zone: product.zona_clim || product.climate_zone,
+          similarity_score: product.similarity_score,
+          // Store original backend fields
+          tipo: product.tipo,
+          immagine: product.immagine,
+          zona_clim: product.zona_clim,
+          totale: product.totale,
+          installaz: product.installaz,
+          descrizione_titolo: product.descrizione_titolo,
+          descrizione: product.descrizione
         })) || [];
         
         const assistantResponse = {
@@ -501,13 +512,28 @@ const ChatWindow = ({
       const draftResult = await selectProducts(queryId, selectedProducts);
       setCurrentDraftId(draftResult.draft_id);
       
+      // Transform product data to ensure name field is properly set from tipo field
+      const transformedProducts = draftResult.invoice_data.products?.map(product => ({
+        ...product,
+        name: product.tipo || product.name,
+        description: product.descrizione_titolo || product.description,
+        climate_zone: product.zona_clim || product.climate_zone
+      })) || [];
+
+      // Create a properly transformed invoiceData object with correct field mappings
+      const transformedInvoiceData = {
+        ...draftResult.invoice_data,
+        products: transformedProducts,
+        draftId: draftResult.draft_id
+      };
+      
       const aiResponse = {
         id: Date.now(),
         text: "Perfect! I've created an invoice draft with your selected products. Please review and edit the details below:",
         sender: 'assistant',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         type: 'invoice-preview',
-        invoiceData: draftResult.invoice_data,
+        invoiceData: transformedInvoiceData,
         draftId: draftResult.draft_id
       };
       
@@ -539,11 +565,35 @@ const ChatWindow = ({
   };
 
   const handleInvoiceFinalize = async (invoiceData, draftId) => {
+    console.log('🔧 Invoice finalization called with:', { invoiceData, draftId });
     setIsLoading(true);
     
     try {
       if (!backendConnected || !draftId) {
+        console.log('⚠️ Falling back to offline mode - backendConnected:', backendConnected, 'draftId:', draftId);
         // Fallback for offline mode
+        handleOfflineInvoiceFinalization(invoiceData);
+        return;
+      }
+
+      // Check if user is authenticated before making API call
+      if (!isAuthenticated()) {
+        setIsLoading(false);
+        const authResponse = {
+          id: Date.now(),
+          text: "🔐 **Authentication Required**\n\nTo save invoices to the database, you need to sign in first. Please sign in to continue with full functionality.\n\n**Meanwhile**: I'll show you a preview of your invoice (not saved to database).",
+          sender: 'assistant',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: 'auth-required'
+        };
+        setMessages(prev => [...prev, authResponse]);
+        
+        // Trigger auth modal if callback is provided
+        if (onAuthRequired) {
+          onAuthRequired();
+        }
+        
+        // Still show offline preview
         handleOfflineInvoiceFinalization(invoiceData);
         return;
       }
@@ -562,6 +612,8 @@ const ChatWindow = ({
         building_site: createInvoiceRequest.building_site,
         notes: createInvoiceRequest.notes
       });
+
+      console.log('✅ Final invoice created:', finalInvoice);
 
       // Store the invoice data locally for future editing
       setStoredInvoices(prev => new Map(prev.set(finalInvoice.id, finalInvoice)));
@@ -596,15 +648,32 @@ const ChatWindow = ({
     } catch (error) {
       console.error('Error finalizing invoice:', error);
       
+      let errorMessage = `Error creating final invoice: ${error.message}`;
+      let isAuthError = false;
+      
+      // Check for authentication-related errors
+      if (error.message.includes('403') || error.message.includes('Forbidden') || error.message.includes('unauthorized')) {
+        errorMessage = "🔐 **Authentication Error**\n\nYour session has expired or you're not signed in. Please sign in again to save invoices to the database.\n\n**Meanwhile**: I'll show you a preview of your invoice (not saved to database).";
+        isAuthError = true;
+      }
+      
       const errorResponse = {
         id: Date.now(),
-        text: `Error creating final invoice: ${error.message}. Please try again or contact support.`,
+        text: errorMessage,
         sender: 'assistant',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        type: 'error'
+        type: isAuthError ? 'auth-error' : 'error'
       };
       
       setMessages(prev => [...prev, errorResponse]);
+      
+      // If it's an auth error, show offline preview and trigger auth modal
+      if (isAuthError) {
+        if (onAuthRequired) {
+          onAuthRequired();
+        }
+        handleOfflineInvoiceFinalization(invoiceData);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -631,7 +700,7 @@ const ChatWindow = ({
       
       const aiResponse = {
         id: Date.now(),
-        text: "⚠️ Offline mode - showing final invoice preview (not saved to database):\n\n💡 **Tip**: You can still edit this invoice by asking me! For example: \"Change the recipient to John Smith\"",
+        text: "⚠️ **Backend Unavailable - Offline Mode**\n\nI can't connect to the server right now, so your invoice is shown as a preview only (not saved to database).\n\n**To get full functionality:**\n• Make sure your FastAPI backend server is running\n• Check your internet connection\n• The backend should be available at: `http://localhost:8000`\n\n💡 **Meanwhile**: You can still edit this invoice by asking me! For example: \"Change the recipient to John Smith\"",
         sender: 'assistant',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         type: 'invoice-card',

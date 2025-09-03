@@ -162,14 +162,7 @@ export default function ChatLayout({ children }) {
           </button>
           <h1 className="text-base font-semibold text-gray-900 dark:text-white truncate">Invoice Generator</h1>
           <div className="w-9 flex justify-end">
-            {!isAuthenticated() && (
-              <button
-                onClick={handleAuthRequired}
-                className="text-xs px-2 py-1 bg-blue-600 text-white rounded-md"
-              >
-                Sign In
-              </button>
-            )}
+        
           </div>
         </div>
         

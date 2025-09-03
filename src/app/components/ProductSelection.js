@@ -32,7 +32,7 @@ const ProductSelection = ({ products, selectedProducts = [], onSelectionChange, 
     return products
       .filter(product => selections.includes(product.id))
       .reduce((total, product) => {
-        // Only sum the product price, exclude installation
+        // Use correct backend field names
         const price = product.totale || product.price || 0;
         return total + price;
       }, 0);
@@ -77,16 +77,16 @@ const ProductSelection = ({ products, selectedProducts = [], onSelectionChange, 
               />
               <div className="flex-1 min-w-0">
                 <div className="font-medium text-gray-900 dark:text-white text-sm">
-                  {product.P_name || product.name}
+                  {product.tipo || product.name}
                 </div>
                 {(product.P_code || product.code) && (
                   <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     Code: {product.P_code || product.code}
                   </div>
                 )}
-                {product.description && (
+                {(product.descrizione_titolo || product.description) && (
                   <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                    {product.description}
+                    {product.descrizione_titolo || product.description}
                   </div>
                 )}
                 <div className="flex items-center justify-between mt-2">
@@ -94,19 +94,34 @@ const ProductSelection = ({ products, selectedProducts = [], onSelectionChange, 
                     <span className="text-sm font-medium text-gray-900 dark:text-white">
                       €{(product.totale || product.price || 0).toFixed(2)}
                     </span>
+                    {product.quota_gse > 0 && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        GSE: €{(product.quota_gse || 0).toFixed(2)}
+                      </span>
+                    )}
+                    {product.pagam_cliente > 0 && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        Client: €{(product.pagam_cliente || 0).toFixed(2)}
+                      </span>
+                    )}
                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                      +€{(product.installazione || product.installation || 0).toFixed(2)} install
+                      +€{(product.installaz || product.installation || 0).toFixed(2)} install
                     </span>
                   </div>
                   <div className="text-right">
-                    {product.climate_zone && (
+                    {(product.zona_clim || product.climate_zone) && (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                        Zone {product.climate_zone}
+                        Zone {product.zona_clim || product.climate_zone}
                       </span>
                     )}
                     {product.similarity_score && (
                       <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
                         {(product.similarity_score * 100).toFixed(0)}% match
+                      </div>
+                    )}
+                    {product.n_rate > 0 && (
+                      <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                        {product.n_rate}x €{(product.valore_rate || 0).toFixed(2)}
                       </div>
                     )}
                   </div>
@@ -138,6 +153,12 @@ const ProductSelection = ({ products, selectedProducts = [], onSelectionChange, 
                 Total Price
               </th>
               <th className="text-right py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">
+                GSE Quota
+              </th>
+              <th className="text-right py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Client Payment
+              </th>
+              <th className="text-right py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Installation
               </th>
             </tr>
@@ -160,7 +181,7 @@ const ProductSelection = ({ products, selectedProducts = [], onSelectionChange, 
                 </td>
                 <td className="py-3 px-4">
                   <div className="font-medium text-gray-900 dark:text-white">
-                    {product.P_name || product.name}
+                    {product.tipo || product.name}
                   </div>
                   {(product.P_code || product.code) && (
                     <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -175,13 +196,13 @@ const ProductSelection = ({ products, selectedProducts = [], onSelectionChange, 
                 </td>
                 <td className="py-3 px-4">
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {product.description || 'No description available'}
+                    {product.descrizione_titolo || product.description || 'No description available'}
                   </div>
                 </td>
                 <td className="py-3 px-4 text-center">
-                  {product.climate_zone && (
+                  {(product.zona_clim || product.climate_zone) && (
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                      Zone {product.climate_zone}
+                      Zone {product.zona_clim || product.climate_zone}
                     </span>
                   )}
                 </td>
@@ -192,7 +213,22 @@ const ProductSelection = ({ products, selectedProducts = [], onSelectionChange, 
                 </td>
                 <td className="py-3 px-4 text-right">
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    €{(product.installazione || product.installation || 0).toFixed(2)}
+                    €{(product.quota_gse || 0).toFixed(2)}
+                  </div>
+                </td>
+                <td className="py-3 px-4 text-right">
+                  <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                    €{(product.pagam_cliente || 0).toFixed(2)}
+                  </div>
+                  {product.n_rate > 0 && (
+                    <div className="text-xs text-blue-600 dark:text-blue-400">
+                      {product.n_rate}x €{(product.valore_rate || 0).toFixed(2)}
+                    </div>
+                  )}
+                </td>
+                <td className="py-3 px-4 text-right">
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    €{(product.installaz || product.installation || 0).toFixed(2)}
                   </div>
                 </td>
               </tr>
