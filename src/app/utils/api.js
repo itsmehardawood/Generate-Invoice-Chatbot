@@ -10,14 +10,14 @@ export const getAuthHeaders = async () => {
   const token = localStorage.getItem('access_token');
   
   // TODO: Implement token refresh when backend endpoint is ready
-  // if (token && isTokenExpired()) {
-  //   try {
-  //     token = await refreshAccessToken();
-  //   } catch (error) {
-  //     console.error('Failed to refresh token:', error);
-  //     return { 'Content-Type': 'application/json' };
-  //   }
-  // }
+  if (token && isTokenExpired()) {
+    try {
+      token = await refreshAccessToken();
+    } catch (error) {
+      console.error('Failed to refresh token:', error);
+      return { 'Content-Type': 'application/json' };
+    }
+  }
   
   return {
     'Content-Type': 'application/json',

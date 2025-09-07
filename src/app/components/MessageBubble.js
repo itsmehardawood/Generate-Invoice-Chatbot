@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import ProductSelection from './ProductSelection';
 import InlineInvoicePreview from './InlineInvoicePreview';
-import ProfessionalInvoice from './ProfessionalInvoice';
-import ProfessionalInvoiceWithChanges from './ProfessionalInvoiceWithChanges_new';
+
+import ExactHtmlInvoiceTemplate from './ExactHtmlInvoiceTemplate';
+import ProfessionalInvoiceWithNewChanges from './ProfessionalInvoiceWithNewChanges';
 
 const MessageBubble = ({ message, onProductSelect, onInvoiceUpdate, onInvoiceFinalize }) => {
   // Handle different message property names for backward compatibility
@@ -49,8 +50,14 @@ const MessageBubble = ({ message, onProductSelect, onInvoiceUpdate, onInvoiceFin
 
       if (message.type === 'final-invoice' || message.type === 'invoice-card') {
         return (
-          <ProfessionalInvoice 
-            invoiceData={message.invoiceData} 
+          // <ProfessionalInvoice 
+          //   invoiceData={message.invoiceData} 
+          //   invoiceId={message.invoiceId}
+          //   isOffline={message.isOffline}
+          // />
+
+          <ExactHtmlInvoiceTemplate
+            invoiceData={message.invoiceData}
             invoiceId={message.invoiceId}
             isOffline={message.isOffline}
           />
@@ -59,7 +66,7 @@ const MessageBubble = ({ message, onProductSelect, onInvoiceUpdate, onInvoiceFin
 
       if (message.type === 'updated-invoice' || message.type === 'invoice-card-edited') {
         return (
-          <ProfessionalInvoiceWithChanges 
+          <ProfessionalInvoiceWithNewChanges 
             invoiceData={message.invoiceData} 
             originalInvoiceData={message.originalInvoiceData}
             invoiceId={message.invoiceId}
