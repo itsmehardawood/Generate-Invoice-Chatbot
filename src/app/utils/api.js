@@ -10,14 +10,14 @@ export const getAuthHeaders = async () => {
   const token = localStorage.getItem('access_token');
   
   // TODO: Implement token refresh when backend endpoint is ready
-  if (token && isTokenExpired()) {
-    try {
-      token = await refreshAccessToken();
-    } catch (error) {
-      console.error('Failed to refresh token:', error);
-      return { 'Content-Type': 'application/json' };
-    }
-  }
+  // if (token && isTokenExpired()) {
+  //   try {
+  //     token = await refreshAccessToken();
+  //   } catch (error) {
+  //     console.error('Failed to refresh token:', error);
+  //     return { 'Content-Type': 'application/json' };
+  //   }
+  // }
   
   return {
     'Content-Type': 'application/json',
@@ -258,32 +258,73 @@ export const generateChatTitle = (query) => {
 };
 
 // Transform backend products to frontend format
+
 export const transformProductsToFrontend = (backendProducts) => {
   if (!Array.isArray(backendProducts)) return [];
-  
-  return backendProducts.map(product => ({
-    id: product.id,
-    name: product.tipo || product.name || `Product ${product.id}`, // Ensure name is set from tipo
-    code: product.P_code || product.code || '',
-    description: product.descrizione_titolo || product.description || `${product.tipo || 'Product'} - Climate Zone ${product.zona_clim || 'N/A'}`,
-    fullDescription: product.descrizione || '',
-    price: product.totale || product.price || 0,
-    installation: product.installaz || product.installation || 0,
-    climate_zone: product.zona_clim || product.climate_zone,
-    similarity_score: product.similarity_score,
-    unit_price: product.totale || product.price || 0, // Add unit_price for invoice preview
-    total_price: product.totale || product.price || 0, // Add total_price for invoice preview
-    quantity: 1, // Default quantity
-    // Backend specific fields
-    tipo: product.tipo,
-    immagine: product.immagine,
-    zona_clim: product.zona_clim,
-    totale: product.totale,
-    installaz: product.installaz,
-    descrizione_titolo: product.descrizione_titolo,
-    descrizione: product.descrizione
-  }));
+
+  return backendProducts.map(product => {
+    const quantity = product.requested_quantity ?? product.quantity ?? 1;
+    const unitPrice = product.totale ?? product.price ?? 0;
+
+    console.log('Transforming product:', {
+      id: product.id,
+      tipo: product.tipo,
+      requested_quantity: product.requested_quantity,
+      quantity: product.quantity,
+      finalQuantity: quantity
+    });
+
+    const transformedProduct = {
+      id: product.id,
+      name: product.tipo || product.name || `Product ${product.id}`,
+      code: product.P_code || product.code || '',
+      description:
+        product.descrizione_titolo ||
+        product.description ||
+        (product.tipo
+          ? `${product.tipo} - Climate Zone ${product.zona_clim || 'N/A'}`
+          : 'No description available'),
+      fullDescription: product.descrizione || '',
+
+      // 👇 Correct price and quantity handling
+      unit_price: unitPrice,
+      quantity: quantity, // This is the calculated final quantity
+      total_price: quantity * unitPrice,
+      requested_quantity: quantity, // Use the calculated quantity, not the original field
+
+      installation: product.installaz || product.installation || 0,
+      climate_zone: product.zona_clim || product.climate_zone,
+      similarity_score: product.similarity_score,
+
+      // Keep all backend fields exactly as they are
+      tipo: product.tipo,
+      immagine: product.immagine,
+      zona_clim: product.zona_clim,
+      totale: product.totale,
+      quota_gse: product.quota_gse,
+      pagam_cliente: product.pagam_cliente,
+      rateizzazione: product.rateizzazione,
+      iva: product.iva,
+      valore_rate: product.valore_rate,
+      n_rate: product.n_rate,
+      installaz: product.installaz,
+      commerc: product.commerc,
+      descrizione_titolo: product.descrizione_titolo,
+      descrizione: product.descrizione
+    };
+
+    console.log('Final transformed product:', transformedProduct);
+    console.log('Final quantity check:', {
+      quantity: transformedProduct.quantity,
+      requested_quantity: transformedProduct.requested_quantity,
+      unit_price: transformedProduct.unit_price
+    });
+    
+    return transformedProduct;
+  });
 };
+
+
 
 // Transform backend message format to frontend format
 export const transformBackendMessages = (backendMessages) => {
@@ -404,6 +445,16 @@ export const parseQuery = async (query) => {
     }
     
     const result = await response.json();
+    
+    console.log('Raw backend result:', result);
+    
+    // Transform products in the response to ensure frontend compatibility
+    if (result.matched_products && Array.isArray(result.matched_products)) {
+      console.log('Transforming matched_products:', result.matched_products);
+      result.matched_products = transformProductsToFrontend(result.matched_products);
+      console.log('Transformed matched_products:', result.matched_products);
+    }
+    
     return result;
   } catch (error) {
     console.error('Parse query error:', error);

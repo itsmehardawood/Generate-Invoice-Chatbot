@@ -150,12 +150,12 @@ const InlineInvoicePreview = ({
                     <th className="text-center py-2 text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">
                       Qty
                     </th>
-                    <th className="text-right py-2 text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {/* <th className="text-right py-2 text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">
                       Unit Price
                     </th>
                     <th className="text-right py-2 text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">
                       Total
-                    </th>
+                    </th> */}
                   </tr>
                 </thead>
                 <tbody>
@@ -182,14 +182,14 @@ const InlineInvoicePreview = ({
                       <td className="py-2 text-center text-gray-900 dark:text-white text-sm lg:text-base">
                         {item.quantity}
                       </td>
-                      <td className="py-2 text-right text-gray-900 dark:text-white text-sm lg:text-base">
+                      {/* <td className="py-2 text-right text-gray-900 dark:text-white text-sm lg:text-base">
   €{item.unit_price.toFixed(2)}
                       </td>
                       <td className="py-2 text-right text-gray-900 dark:text-white text-sm lg:text-base">
                         
                          €{item.total_price.toFixed(2)}
 
-                      </td>
+                      </td> */}
                     </tr>
                   ))}
                 </tbody>
