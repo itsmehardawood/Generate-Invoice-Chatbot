@@ -13,7 +13,7 @@ import Link from 'next/link';
 
 const Sidebar = ({ 
   onClose, 
-  isCollapsed = false, 
+  isCollapsed = true, 
   onToggleCollapse, 
   onAuthRequired,
   onSessionSelect,

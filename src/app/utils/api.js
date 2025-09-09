@@ -1,6 +1,6 @@
 // API utility functions for FastAPI backend integration
 
-const API_BASE_URL = 'https://greengenius.crm-labloid.com';
+// const API_BASE_URL = 'https://greengenius.crm-labloid.com';
 // const API_BASE_URL = 'http://localhost:8000';
 
 // Authentication helper functions
@@ -463,7 +463,7 @@ export const parseQuery = async (query) => {
 };
 
 // Select products and create invoice draft
-export const selectProducts = async (queryId, selectedProductIds) => {
+export const selectProducts = async (queryId, selectedProducts) => {
   try {
     const currentSessionId = typeof window !== 'undefined' ? localStorage.getItem('current_session_id') : null;
     const headers = await getAuthHeaders();
@@ -473,7 +473,7 @@ export const selectProducts = async (queryId, selectedProductIds) => {
       headers,
       body: JSON.stringify({
         query_id: queryId,
-        selected_product_ids: selectedProductIds,
+        selected_products: selectedProducts,
         ...(currentSessionId && { session_id: currentSessionId })
       }),
     });

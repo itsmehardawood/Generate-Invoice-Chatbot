@@ -7,7 +7,7 @@ import { isAuthenticated, createChatSession, getSessionMessages, generateChatTit
 
 export default function ChatLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [currentSessionId, setCurrentSessionId] = useState(null);
