@@ -1,6 +1,6 @@
 // API utility functions for FastAPI backend integration
 
-// const API_BASE_URL = 'https://greengenius.crm-labloid.com';
+const API_BASE_URL = 'https://greengenius.crm-labloid.com';
 // const API_BASE_URL = 'http://localhost:8000';
 
 // Authentication helper functions
