@@ -735,18 +735,18 @@ const ChatWindow = ({
         isSidebarCollapsed ? 'lg:left-16 xl:left-20' : 'lg:left-64'
       }`}>
         <div className="flex items-center">
-          <div className={`h-2 w-2 lg:h-3 lg:w-3 rounded-full mr-2 lg:mr-3 ${backendConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+          {/* <div className={`h-2 w-2 lg:h-3 lg:w-3 rounded-full mr-2 lg:mr-3 ${backendConnected ? 'bg-green-500' : 'bg-red-500'}`}></div> */}
           <h2 className="text-gray-900 dark:text-white font-semibold text-sm lg:text-base">Invoice Assistant</h2>
         </div>
         <div className="flex items-center text-xs lg:text-sm">
-          <span className={`px-2 py-1 rounded-full text-xs ${
+          {/* <span className={`px-2 py-1 rounded-full text-xs ${
             backendConnected 
               ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
               : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
           }`}>
             <span className="hidden sm:inline">{backendConnected ? 'Online' : ' Offline'}</span>
             <span className="sm:hidden">{backendConnected ? 'Online' : 'Offline'}</span>
-          </span>
+          </span> */}
         </div>
       </div>
 

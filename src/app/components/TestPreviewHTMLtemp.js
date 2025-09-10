@@ -5,6 +5,7 @@ const ExactHtmlInvoiceTemplate = ({
   invoiceId,
   isOffline = false,
 }) => {
+  const [showPreview, setShowPreview] = useState(false);
   const [htmlContent, setHtmlContent] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -590,10 +591,10 @@ const ExactHtmlInvoiceTemplate = ({
   };
 
   useEffect(() => {
-    if (!htmlContent) {
+    if (showPreview && !htmlContent) {
       generateProcessedHtmlContent();
     }
-  }, []);
+  }, [showPreview]);
 
   const handlePrint = async () => {
     await generateProcessedHtmlContent();
@@ -644,31 +645,131 @@ const ExactHtmlInvoiceTemplate = ({
   return (
     <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
       <div className="print-content bg-white relative" style={{ minHeight: "8.7cm", fontFamily: "Arial, sans-serif" }}>
+        {/* Toggle buttons */}
+        <div className="print-hide flex justify-center gap-4 p-4 bg-gray-100 border-b">
+          <button
+            onClick={() => setShowPreview(false)}
+            className={`px-6 py-2 rounded-lg transition-colors ${
+              !showPreview 
+                ? 'bg-teal-700 text-white' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Vista Normale
+          </button>
+          <button
+            onClick={() => setShowPreview(true)}
+            className={`px-6 py-2 rounded-lg transition-colors ${
+              showPreview 
+                ? 'bg-teal-700 text-white' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Anteprima HTML Esatta
+          </button>
+        </div>
+
         {/* Main content area */}
         <div className="print-main-content">
-          {/* Exact HTML Template Preview */}
-          <div className="w-full max-w-4xl mx-auto bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-            {loading ? (
-              <div className="flex justify-center items-center h-64">
-                <div className="text-lg text-gray-600">Caricamento anteprima...</div>
-              </div>
-            ) : (
-              <div className="w-full bg-gray-50 p-4">
-                <div className="w-full bg-white rounded shadow-sm border border-gray-200">
-                  <iframe
-                    srcDoc={htmlContent}
-                    className="w-full border-0"
-                    style={{ 
-                      height: '600px',
-                      minHeight: '500px'
-                    }}
-                    title="Invoice Preview"
-                    sandbox="allow-same-origin"
-                  />
+          {showPreview ? (
+            /* Exact HTML Template Preview */
+            <div className="w-full max-w-4xl mx-auto bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+              {loading ? (
+                <div className="flex justify-center items-center h-64">
+                  <div className="text-lg text-gray-600">Caricamento anteprima...</div>
+                </div>
+              ) : (
+                <div className="w-full bg-gray-50 p-4">
+                  <div className="w-full bg-white rounded shadow-sm border border-gray-200">
+                    <iframe
+                      srcDoc={htmlContent}
+                      className="w-full border-0"
+                      style={{ 
+                        height: '600px',
+                        minHeight: '500px'
+                      }}
+                      title="Invoice Preview"
+                      sandbox="allow-same-origin"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Normal View - Original Content */
+            <div className="p-8">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  Preventivo Professionale
+                </h2>
+
+                <div className="bg-gray-50 p-6 rounded-lg mb-6 text-black">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    Informazioni Preventivo
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium">Cliente:</span> {data.recipient}
+                    </div>
+                    <div>
+                      <span className="font-medium">Numero:</span>{" "}
+                      {invoiceId || "456a/2025"}
+                    </div>
+                    <div>
+                      <span className="font-medium">Data:</span>{" "}
+                      {formatDate(data.created_at)}
+                    </div>
+                    <div>
+                      <span className="font-medium">Città:</span>{" "}
+                      {data.building_site?.city}
+                    </div>
+                    <div>
+                      <span className="font-medium">Indirizzo:</span>{" "}
+                      {data.building_site?.address}
+                    </div>
+                    <div>
+                      <span className="font-medium">Prodotti:</span>{" "}
+                      {data.products?.length || 0}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 p-6 text-black rounded-lg mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    Riepilogo Economico
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium">Costo Totale:</span> €
+                      {(data.subtotal || 0).toLocaleString("it-IT", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </div>
+                    <div>
+                      <span className="font-medium">Conto Termico:</span> -€
+                      {(data.conto_termico_discount || 0).toLocaleString("it-IT", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </div>
+                    <div>
+                      <span className="font-medium">Credito Imposta:</span> -€
+                      {(data.credito_imposta || 0).toLocaleString("it-IT", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </div>
+                    <div className="col-span-2 pt-2 border-t">
+                      <span className="font-bold text-lg">
+                        Quota Cliente: €
+                        {(data.quota_cliente || 0).toLocaleString("it-IT", {
+                          minimumFractionDigits: 2,
+                        })}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 

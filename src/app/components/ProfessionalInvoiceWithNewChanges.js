@@ -2,8 +2,7 @@
 
 "use client";
 
-import Image from "next/image";
-import { useState } from "react";
+import React, { useState, useEffect } from 'react';
 
 const ProfessionalInvoiceWithNewChanges = ({
   invoiceData,
@@ -12,7 +11,8 @@ const ProfessionalInvoiceWithNewChanges = ({
   invoiceId,
   isOffline = false,
 }) => {
-  const [showPreview, setShowPreview] = useState(false);
+  const [htmlContent, setHtmlContent] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const formatDate = (dateString) => {
     if (!dateString) return new Date().toLocaleDateString("it-IT");
@@ -511,14 +511,27 @@ const ProfessionalInvoiceWithNewChanges = ({
       </tr>
     `;
   };
-  const handlePrint = async () => {
+
+  const generateProcessedHtmlContent = async () => {
+    setLoading(true);
     try {
       // Load the original HTML template
-      const response = await fetch("/invoice-template.html");
+      const response = await fetch("/invoice-template.html", {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       let htmlContent = await response.text();
 
-      if (!htmlContent) {
-        throw new Error("Could not load HTML template");
+      if (!htmlContent || htmlContent.length < 100) {
+        throw new Error("Invalid or empty HTML template");
       }
 
       // Replace recipient/client name with change highlighting
@@ -614,30 +627,6 @@ const ProfessionalInvoiceWithNewChanges = ({
         );
       }
 
-      // Add postal code and country if available with change highlighting
-      if (data.building_site?.postal_code || data.building_site?.country) {
-        const addressPattern = /<h4[^>]*style="padding-top: 5pt; padding-left: 14pt[^>]*>.*?<\/h4>/;
-        htmlContent = htmlContent.replace(
-          addressPattern,
-          (match) => {
-            let additionalInfo = '';
-            if (data.building_site?.postal_code) {
-              const currentPostal = data.building_site.postal_code;
-              const originalPostal = originalData.building_site?.postal_code;
-              const postalStyle = hasNewChange(currentPostal, originalPostal) ? 'background-color: #fff3cd;' : '';
-              additionalInfo += `<p style="padding-left: 14pt; text-indent: 0pt; text-align: left; ${postalStyle}">${currentPostal}</p>`;
-            }
-            if (data.building_site?.country) {
-              const currentCountry = data.building_site.country;
-              const originalCountry = originalData.building_site?.country;
-              const countryStyle = hasNewChange(currentCountry, originalCountry) ? 'background-color: #fff3cd;' : '';
-              additionalInfo += `<p style="padding-left: 14pt; text-indent: 0pt; text-align: left; ${countryStyle}">${currentCountry}</p>`;
-            }
-            return match + additionalInfo;
-          }
-        );
-      }
-
       // Financial Summary with change highlighting
       const currentSubtotal = data.subtotal || 193649.73;
       const originalSubtotal = originalData.subtotal || 193649.73;
@@ -684,13 +673,8 @@ const ProfessionalInvoiceWithNewChanges = ({
       );
 
       // Replace product table
-      const productTableStart = htmlContent.indexOf(
-        '<tr style="height: 142pt">'
-      );
-      const productTableEnd = htmlContent.indexOf(
-        "</table>",
-        productTableStart
-      );
+      const productTableStart = htmlContent.indexOf('<tr style="height: 142pt">');
+      const productTableEnd = htmlContent.indexOf("</table>", productTableStart);
 
       if (productTableStart !== -1 && productTableEnd !== -1) {
         const beforeTable = htmlContent.substring(0, productTableStart);
@@ -699,14 +683,8 @@ const ProfessionalInvoiceWithNewChanges = ({
       }
 
       // Replace summary table
-      const summaryTableStart = htmlContent.indexOf(
-        '<tr style="height: 41pt">'
-      );
-      const summaryTableEnd =
-        htmlContent.indexOf(
-          "</tr>",
-          htmlContent.indexOf("</tr>", summaryTableStart) + 5
-        ) + 5;
+      const summaryTableStart = htmlContent.indexOf('<tr style="height: 41pt">');
+      const summaryTableEnd = htmlContent.indexOf("</tr>", htmlContent.indexOf("</tr>", summaryTableStart) + 5) + 5;
 
       if (summaryTableStart !== -1 && summaryTableEnd !== -1) {
         const beforeSummary = htmlContent.substring(0, summaryTableStart);
@@ -714,20 +692,63 @@ const ProfessionalInvoiceWithNewChanges = ({
         htmlContent = beforeSummary + generateSummaryTable() + afterSummary;
       }
 
-      // Open in print window
-      const printWindow = window.open("", "_blank", "width=800,height=600");
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-      printWindow.focus();
-
-      setTimeout(() => {
-        printWindow.print();
-      }, 500);
+      setHtmlContent(htmlContent);
     } catch (error) {
       console.error("Error loading HTML template:", error);
-      alert(
-        "Could not load the original template. Please make sure the HTML file is accessible."
-      );
+      setHtmlContent('<p style="color: red; text-align: center; padding: 20px;">Error loading template. Please make sure the HTML file is accessible.</p>');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!htmlContent) {
+      generateProcessedHtmlContent();
+    }
+  }, []);
+  const handlePrint = async () => {
+    await generateProcessedHtmlContent();
+    
+    if (!htmlContent) {
+      alert("Could not load the template for printing.");
+      return;
+    }
+
+    try {
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                     window.innerWidth <= 768;
+
+      if (isMobile) {
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const blobUrl = URL.createObjectURL(blob);
+        
+        const printWindow = window.open(blobUrl, '_blank');
+        
+        if (printWindow) {
+          printWindow.onload = () => {
+            setTimeout(() => {
+              printWindow.print();
+              setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+            }, 1000);
+          };
+        } else {
+          const directWindow = window.open("", "_blank", "width=800,height=600");
+          directWindow.document.write(htmlContent);
+          directWindow.document.close();
+          setTimeout(() => directWindow.print(), 500);
+          URL.revokeObjectURL(blobUrl);
+        }
+      } else {
+        const printWindow = window.open("", "_blank", "width=800,height=600");
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => printWindow.print(), 500);
+      }
+
+    } catch (error) {
+      console.error("Error printing:", error);
+      alert("Could not print the document. Please try again.");
     }
   };
 
@@ -737,339 +758,31 @@ const ProfessionalInvoiceWithNewChanges = ({
         className="print-content bg-white relative"
         style={{ minHeight: "8.7cm", fontFamily: "Arial, sans-serif" }}
       >
-        {/* Toggle buttons */}
-        <div className="print-hide flex justify-center gap-4 p-4 bg-gray-100 border-b">
-          <button
-            onClick={() => setShowPreview(false)}
-            className={`px-6 py-2 rounded-lg transition-colors ${
-              !showPreview 
-                ? 'bg-teal-700 text-white' 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            Vista Normale
-          </button>
-          <button
-            onClick={() => setShowPreview(true)}
-            className={`px-6 py-2 rounded-lg transition-colors ${
-              showPreview 
-                ? 'bg-teal-700 text-white' 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            Anteprima Stampa
-          </button>
-        </div>
-
         {/* Main content area */}
         <div className="print-main-content">
-          {showPreview ? (
-            /* Print Preview Section */
-            <div className="p-8 bg-white" style={{ fontFamily: 'Arial, sans-serif' }}>
-              {/* Simulated Print Header */}
-              <div className="mb-6 p-4 bg-green-800 text-white rounded-lg">
-                <div className="text-center">
-                  <h1 className="text-xl font-bold">FATTURA ELETTRONICA</h1>
-                  <div className="text-sm mt-2">
-                    {renderWithNewChangeHighlight(formatDate(data.created_at), formatDate(previousData.created_at), formatDate(originalData.created_at))} - N. {renderWithNewChangeHighlight(invoiceId || "456a/2025", previousData.invoiceId || "456a/2025", originalData.invoiceId || "456a/2025")}
-                  </div>
+          {/* Exact HTML Template Preview */}
+          <div className="w-full max-w-4xl mx-auto bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+            {loading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="text-lg text-gray-600">Caricamento anteprima...</div>
+              </div>
+            ) : (
+              <div className="w-full bg-gray-50 p-4">
+                <div className="w-full bg-white rounded shadow-sm border border-gray-200">
+                  <iframe
+                    srcDoc={htmlContent}
+                    className="w-full border-0"
+                    style={{ 
+                      height: '600px',
+                      minHeight: '500px'
+                    }}
+                    title="Invoice Preview"
+                    sandbox="allow-same-origin"
+                  />
                 </div>
               </div>
-
-              {/* Invoice Details Preview */}
-              <div className="bg-gray-50 p-6 rounded-lg mb-6 border-2 text-black border-gray-200">
-                <div className="grid grid-cols-2 gap-6">
-                  {/* Client Info */}
-                  <div>
-                    <h3 className="font-bold text-lg text-gray-900 mb-2">Cliente</h3>
-                    <div className="text-sm space-y-1">
-                      <div className="font-semibold">{data.recipient === originalData.recipient ? data.recipient : <span className="bg-yellow-200 px-1 rounded font-semibold">{data.recipient}</span>}</div>
-                      <div>{data.building_site?.address === originalData.building_site?.address ? data.building_site?.address : <span className="bg-yellow-200 px-1 rounded">{data.building_site?.address}</span>}</div>
-                      <div>
-                        {data.building_site?.city === originalData.building_site?.city ? data.building_site?.city : <span className="bg-yellow-200 px-1 rounded">{data.building_site?.city}</span>} {data.building_site?.postal_code === originalData.building_site?.postal_code ? data.building_site?.postal_code : <span className="bg-yellow-200 px-1 rounded">{data.building_site?.postal_code}</span>}
-                      </div>
-                      <div>{data.building_site?.country === originalData.building_site?.country ? data.building_site?.country : <span className="bg-yellow-200 px-1 rounded">{data.building_site?.country}</span>}</div>
-                      {data.notes && (
-                        <div><span className="font-medium">Note:</span> {data.notes === originalData.notes ? data.notes : <span className="bg-yellow-200 px-1 rounded">{data.notes}</span>}</div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Invoice Info */}
-                  <div className="text-right">
-                    <h3 className="font-bold text-lg text-gray-900 mb-2">Dettagli Fattura</h3>
-                    <div className="text-sm space-y-1">
-                      <div><span className="font-medium">Numero:</span> {(invoiceId || "456a/2025") === (originalData.invoiceId || "456a/2025") ? (invoiceId || "456a/2025") : <span className="bg-yellow-200 px-1 rounded">{invoiceId || "456a/2025"}</span>}</div>
-                      <div><span className="font-medium">Data:</span> {formatDate(data.created_at) === formatDate(originalData.created_at) ? formatDate(data.created_at) : <span className="bg-yellow-200 px-1 rounded">{formatDate(data.created_at)}</span>}</div>
-                      <div><span className="font-medium">Revisione:</span> {(data.revision_number || '8') === (originalData.revision_number || '8') ? (data.revision_number || '8') : <span className="bg-yellow-200 px-1 rounded">{data.revision_number || '8'}</span>}</div>
-                      <div><span className="font-medium">Da:</span> {(data.author || 'GABRIELE') === (originalData.author || 'GABRIELE') ? (data.author || 'GABRIELE') : <span className="bg-yellow-200 px-1 rounded">{data.author || 'GABRIELE'}</span>}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Products Preview Table */}
-              <div className="mb-6 text-black">
-                <h3 className="font-bold text-lg text-gray-900 mb-4">Prodotti/Servizi</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full border-2 border-gray-300 text-xs">
-                    <thead>
-                      <tr className="bg-gray-200">
-                        <th className="border border-gray-300 p-2 text-left">Codice</th>
-                        <th className="border border-gray-300 p-2 text-left">Descrizione</th>
-                        <th className="border border-gray-300 p-2 text-center">Qtà</th>
-                        <th className="border border-gray-300 p-2 text-center">U.M.</th>
-                        <th className="border border-gray-300 p-2 text-right">Prezzo Unit.</th>
-                        <th className="border border-gray-300 p-2 text-right">Totale</th>
-                        <th className="border border-gray-300 p-2 text-right">Incentivi</th>
-                        <th className="border border-gray-300 p-2 text-right">Quota Cliente</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.products?.map((item, index) => {
-                        const originalItem = originalData.products?.[index] || {};
-                        return (
-                          <tr key={index} className="hover:bg-gray-50">
-                            <td className="border border-gray-300 p-2 font-medium">
-                              {(item.codice || item.P_code || "") === (originalItem.codice || originalItem.P_code || "") ? 
-                                (item.codice || item.P_code || "") : 
-                                <span className="bg-yellow-200 px-1 rounded font-medium">{item.codice || item.P_code || ""}</span>
-                              }
-                            </td>
-                            <td className="border border-gray-300 p-2">
-                              <div className="font-medium mb-1">
-                                {(item.tipo || item.name || "") === (originalItem.tipo || originalItem.name || "") ? 
-                                  (item.tipo || item.name || "") : 
-                                  <span className="bg-yellow-200 px-1 rounded font-medium mb-1">{item.tipo || item.name || ""}</span>
-                                }
-                              </div>
-                              <div className="text-xs text-gray-600 leading-tight">
-                                {(item.descrizione || item.description || item.descrizione_titolo || "") === (originalItem.descrizione || originalItem.description || originalItem.descrizione_titolo || "") ? 
-                                  (item.descrizione || item.description || item.descrizione_titolo || "") : 
-                                  <span className="bg-yellow-200 px-1 rounded text-xs text-gray-600 leading-tight">{item.descrizione || item.description || item.descrizione_titolo || ""}</span>
-                                }
-                              </div>
-                            </td>
-                            <td className="border border-gray-300 p-2 text-center">
-                              {(item.quantity || 1) === (originalItem.quantity || 1) ? 
-                                (item.quantity || 1) : 
-                                <span className="bg-yellow-200 px-1 rounded text-center">{item.quantity || 1}</span>
-                              }
-                            </td>
-                            <td className="border border-gray-300 p-2 text-center">
-                              {(item.udm || "Nr") === (originalItem.udm || "Nr") ? 
-                                (item.udm || "Nr") : 
-                                <span className="bg-yellow-200 px-1 rounded text-center">{item.udm || "Nr"}</span>
-                              }
-                            </td>
-                            <td className="border border-gray-300 p-2 text-right">
-                              {(item.unit_price || 0) === (originalItem.unit_price || 0) ? 
-                                `${(item.unit_price || 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €` : 
-                                <span className="bg-yellow-200 px-1 rounded text-right">{(item.unit_price || 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €</span>
-                              }
-                            </td>
-                            <td className="border border-gray-300 p-2 text-right">
-                              {(item.total_price || item.totale || 0) === (originalItem.total_price || originalItem.totale || 0) ? 
-                                `${(item.total_price || item.totale || 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €` : 
-                                <span className="bg-yellow-200 px-1 rounded text-right">{(item.total_price || item.totale || 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €</span>
-                              }
-                            </td>
-                            <td className="border border-gray-300 p-2 text-right">
-                              {(item.incentivi || item.quota_gse || 0) === (originalItem.incentivi || originalItem.quota_gse || 0) ? 
-                                `${(item.incentivi || item.quota_gse || 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €` : 
-                                <span className="bg-yellow-200 px-1 rounded text-right">{(item.incentivi || item.quota_gse || 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €</span>
-                              }
-                            </td>
-                            <td className="border border-gray-300 p-2 text-right font-medium">
-                              {(item.quota_cliente || item.pagam_cliente || 0) === (originalItem.quota_cliente || originalItem.pagam_cliente || 0) ? 
-                                `${(item.quota_cliente || item.pagam_cliente || 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €` : 
-                                <span className="bg-yellow-200 px-1 rounded text-right font-medium">{(item.quota_cliente || item.pagam_cliente || 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €</span>
-                              }
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Financial Summary Preview */}
-              <div className="bg-gray-100 p-6 rounded-lg text-black">
-                <h3 className="font-bold text-lg text-gray-900 mb-4">Riepilogo Economico</h3>
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Subtotale:</span>
-                      <span className="font-medium">
-                        {(data.subtotal || 0) === (originalData.subtotal || 0) ? 
-                          `${(data.subtotal || 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €` : 
-                          <span className="bg-yellow-200 px-1 rounded font-medium">{(data.subtotal || 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €</span>
-                        }
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-green-600">
-                      <span>Conto Termico:</span>
-                      <span className="font-medium">
-                        -{(data.conto_termico_discount || 0) === (originalData.conto_termico_discount || 0) ? 
-                          `${(data.conto_termico_discount || 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €` : 
-                          <span className="bg-yellow-200 px-1 rounded font-medium">{(data.conto_termico_discount || 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €</span>
-                        }
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-blue-600">
-                      <span>Credito Imposta:</span>
-                      <span className="font-medium">
-                        -{(data.credito_imposta || 0) === (originalData.credito_imposta || 0) ? 
-                          `${(data.credito_imposta || 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €` : 
-                          <span className="bg-yellow-200 px-1 rounded font-medium">{(data.credito_imposta || 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €</span>
-                        }
-                      </span>
-                    </div>
-                    {data.tax_amount && (
-                      <div className="flex justify-between text-red-600">
-                        <span>Tasse:</span>
-                        <span className="font-medium">
-                          {(data.tax_amount || 0) === (originalData.tax_amount || 0) ? 
-                            `${(data.tax_amount || 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €` : 
-                            <span className="bg-yellow-200 px-1 rounded font-medium">{(data.tax_amount || 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €</span>
-                          }
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="border-l-2 border-gray-300 pl-6">
-                    <div className="text-right space-y-2">
-                      <div className="flex justify-between">
-                        <span>Costo Totale:</span>
-                        <span className="font-medium">
-                          {(data.total_amount || 0) === (originalData.total_amount || 0) ? 
-                            `${(data.total_amount || 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €` : 
-                            <span className="bg-yellow-200 px-1 rounded font-medium">{(data.total_amount || 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €</span>
-                          }
-                        </span>
-                      </div>
-                      <div className="border-t pt-2 mt-4">
-                        <div className="flex justify-between text-lg font-bold text-teal-700">
-                          <span>QUOTA CLIENTE:</span>
-                          <span>
-                            {(data.quota_cliente || 0) === (originalData.quota_cliente || 0) ? 
-                              `${(data.quota_cliente || 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €` : 
-                              <span className="bg-yellow-200 px-1 rounded text-lg font-bold">{(data.quota_cliente || 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €</span>
-                            }
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Simulated Print Footer */}
-              <div className="mt-6 p-4 bg-green-800 text-white rounded-lg text-center text-sm">
-                <div>© 2025 - Fattura generata digitalmente</div>
-              </div>
-            </div>
-          ) : (
-            /* Normal View - Original Content */
-            <div className="p-8">
-              <div className="text-center">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                  Preventivo Professionale con Modifiche
-                </h2>
-
-                <div className="bg-gray-50 p-6 rounded-lg mb-6 text-black">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    Informazioni Preventivo
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium">Cliente:</span> {renderWithNewChangeHighlight(data.recipient, originalData.recipient)}
-                    </div>
-                    <div>
-                      <span className="font-medium">Numero:</span>{" "}
-                      {renderWithNewChangeHighlight(invoiceId || "456a/2025", originalData.invoiceId || "456a/2025")}
-                    </div>
-                    <div>
-                      <span className="font-medium">Data:</span>{" "}
-                      {renderWithNewChangeHighlight(formatDate(data.created_at), formatDate(originalData.created_at))}
-                    </div>
-                    <div>
-                      <span className="font-medium">Città:</span>{" "}
-                      {renderWithNewChangeHighlight(data.building_site?.city, originalData.building_site?.city)}
-                    </div>
-                    <div>
-                      <span className="font-medium">Indirizzo:</span>{" "}
-                      {renderWithNewChangeHighlight(data.building_site?.address, originalData.building_site?.address)}
-                    </div>
-                    <div>
-                      <span className="font-medium">Prodotti:</span>{" "}
-                      {renderWithNewChangeHighlight(data.products?.length || 0, originalData.products?.length || 0)}
-                    </div>
-                    {data.notes && (
-                      <div>
-                        <span className="font-medium">Note:</span>{" "}
-                        {renderWithNewChangeHighlight(data.notes, originalData.notes)}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="bg-blue-50 p-6 text-black rounded-lg mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    Riepilogo Economico
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium">Costo Totale:</span> €
-                      {renderWithNewChangeHighlight((data.subtotal || 0).toLocaleString("it-IT", {
-                        minimumFractionDigits: 2,
-                      }), (originalData.subtotal || 0).toLocaleString("it-IT", {
-                        minimumFractionDigits: 2,
-                      }))}
-                    </div>
-                    <div>
-                      <span className="font-medium">Conto Termico:</span> -€
-                      {renderWithNewChangeHighlight((data.conto_termico_discount || 0).toLocaleString("it-IT", {
-                        minimumFractionDigits: 2,
-                      }), (originalData.conto_termico_discount || 0).toLocaleString("it-IT", {
-                        minimumFractionDigits: 2,
-                      }))}
-                    </div>
-                    <div>
-                      <span className="font-medium">Credito Imposta:</span> -€
-                      {renderWithNewChangeHighlight((data.credito_imposta || 0).toLocaleString("it-IT", {
-                        minimumFractionDigits: 2,
-                      }), (originalData.credito_imposta || 0).toLocaleString("it-IT", {
-                        minimumFractionDigits: 2,
-                      }))}
-                    </div>
-                    {data.tax_amount && (
-                      <div>
-                        <span className="font-medium">Tasse:</span> €
-                        {renderWithNewChangeHighlight((data.tax_amount || 0).toLocaleString("it-IT", {
-                          minimumFractionDigits: 2,
-                        }), (originalData.tax_amount || 0).toLocaleString("it-IT", {
-                          minimumFractionDigits: 2,
-                        }))}
-                      </div>
-                    )}
-                    <div className="col-span-2 pt-2 border-t">
-                      <span className="font-bold text-lg">
-                        Quota Cliente: €
-                        {renderWithNewChangeHighlight((data.quota_cliente || 0).toLocaleString("it-IT", {
-                          minimumFractionDigits: 2,
-                        }), (originalData.quota_cliente || 0).toLocaleString("it-IT", {
-                          minimumFractionDigits: 2,
-                        }), 'font-bold text-lg')}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
