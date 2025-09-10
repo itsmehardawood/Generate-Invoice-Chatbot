@@ -221,7 +221,7 @@ const ProductSelection = ({ products, selectedProducts = [], onSelectionChange, 
                       €{product.unit_price.toFixed(2)} each
                     </span>
                     <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                      Total: €{(product.unit_price * getProductQuantity(product.id)).toFixed(2)}
+                      Totale: €{(product.unit_price * getProductQuantity(product.id)).toFixed(2)}
                     </span>
                     {product.quota_gse > 0 && (
                       <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -234,7 +234,8 @@ const ProductSelection = ({ products, selectedProducts = [], onSelectionChange, 
                       </span>
                     )}
                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                      +€{product.installaz.toFixed(2)} install
+                      +€{product.installaz.toFixed(2)} installazione
+
                     </span>
                   </div>
                   <div className="text-right">
@@ -285,7 +286,7 @@ const ProductSelection = ({ products, selectedProducts = [], onSelectionChange, 
                 Unit Price
               </th>
               <th className="text-right py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Total Price
+                Totale Price
               </th>
               <th className="text-right py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">
                 GSE Quota
@@ -294,7 +295,7 @@ const ProductSelection = ({ products, selectedProducts = [], onSelectionChange, 
                 Client Payment
               </th>
               <th className="text-right py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Installation
+                installazione
               </th>
             </tr>
           </thead>
@@ -363,7 +364,7 @@ const ProductSelection = ({ products, selectedProducts = [], onSelectionChange, 
                     €{(product.unit_price * getProductQuantity(product.id)).toFixed(2)}
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">
-                    total for {getProductQuantity(product.id)}
+                    Totale for {getProductQuantity(product.id)}
                   </div>
                 </td>
                 <td className="py-3 px-4 text-right">
@@ -400,7 +401,7 @@ const ProductSelection = ({ products, selectedProducts = [], onSelectionChange, 
             </span>
             {selections.length > 0 && (
               <div className="text-base lg:text-lg font-semibold text-gray-900 dark:text-white mt-1">
-                Total: €{calculateTotal().toFixed(2)}
+                Totale: €{calculateTotal().toFixed(2)}
                 <div className="text-xs lg:text-sm text-gray-600 dark:text-gray-400 font-normal">
                   (Including installation)
                 </div>

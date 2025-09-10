@@ -127,13 +127,13 @@ const InlineInvoicePreview = ({
                     <span className="text-gray-600 dark:text-gray-400">
                       Qty: {item.quantity}
                     </span>
-                    <span className="text-gray-600 dark:text-gray-400">
+                    {/* <span className="text-gray-600 dark:text-gray-400">
   €{item.unit_price.toFixed(2)}
                     </span>
                     <span className="font-semibold text-gray-900 dark:text-white">
                         €{item.total_price.toFixed(2)}
                    
-                    </span>
+                    </span> */}
                   </div>
                 </div>
               ))}

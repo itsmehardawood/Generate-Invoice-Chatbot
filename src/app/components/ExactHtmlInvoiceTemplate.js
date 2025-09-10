@@ -473,12 +473,23 @@ const ExactHtmlInvoiceTemplate = ({
 
   const handlePrint = async () => {
     try {
-      // Load the original HTML template
-      const response = await fetch("/invoice-template.html");
+      // Load the original HTML template with better error handling
+      const response = await fetch("/invoice-template.html", {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       let htmlContent = await response.text();
 
-      if (!htmlContent) {
-        throw new Error("Could not load HTML template");
+      if (!htmlContent || htmlContent.length < 100) {
+        throw new Error("Invalid or empty HTML template");
       }
 
       // Replace recipient/client name
@@ -622,20 +633,63 @@ const ExactHtmlInvoiceTemplate = ({
         htmlContent = beforeSummary + generateSummaryTable() + afterSummary;
       }
 
-      // Open in print window
-      const printWindow = window.open("", "_blank", "width=800,height=600");
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-      printWindow.focus();
+      // Detect if we're on mobile
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                     window.innerWidth <= 768;
 
-      setTimeout(() => {
-        printWindow.print();
-      }, 500);
+      if (isMobile) {
+        // On mobile, create a blob URL and open in new tab for better compatibility
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const blobUrl = URL.createObjectURL(blob);
+        
+        // Open in new tab/window
+        const printWindow = window.open(blobUrl, '_blank');
+        
+        if (printWindow) {
+          printWindow.onload = () => {
+            setTimeout(() => {
+              printWindow.print();
+              // Clean up blob URL after a delay
+              setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+            }, 1000);
+          };
+        } else {
+          // Fallback: try direct print
+          const directWindow = window.open("", "_blank", "width=800,height=600");
+          directWindow.document.write(htmlContent);
+          directWindow.document.close();
+          setTimeout(() => directWindow.print(), 500);
+          URL.revokeObjectURL(blobUrl);
+        }
+      } else {
+        // Desktop: use the original method
+        const printWindow = window.open("", "_blank", "width=800,height=600");
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        printWindow.focus();
+
+        setTimeout(() => {
+          printWindow.print();
+        }, 500);
+      }
+
     } catch (error) {
       console.error("Error loading HTML template:", error);
-      alert(
-        "Could not load the original template. Please make sure the HTML file is accessible."
-      );
+      
+      // Provide more specific error messages
+      let errorMessage = "Could not load the original template. ";
+      
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        errorMessage += "Network error - please check your connection and try again.";
+      } else if (error.message.includes('HTTP error')) {
+        errorMessage += "Server error - the template file may be missing.";
+      } else if (error.message.includes('Invalid or empty')) {
+        errorMessage += "The template file appears to be corrupted.";
+      } else {
+        errorMessage += "Please make sure the HTML file is accessible and try again.";
+      }
+      
+      alert(errorMessage);
     }
   };
 
