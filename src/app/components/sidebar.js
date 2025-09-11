@@ -7,7 +7,8 @@ import {
   generateChatTitle, 
   isAuthenticated, 
   logout,
-  deleteSession 
+  deleteSession,
+  updateChatSessionName 
 } from '../utils/api';
 import Link from 'next/link';
 
@@ -25,6 +26,9 @@ const Sidebar = ({
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
   const [error, setError] = useState('');
   const [deletingSessionId, setDeletingSessionId] = useState(null);
+  const [editingSessionId, setEditingSessionId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState('');
+  const [updatingSessionId, setUpdatingSessionId] = useState(null);
 
   // Load user sessions on component mount and when user changes
   useEffect(() => {
@@ -63,21 +67,11 @@ const Sidebar = ({
     }
 
     try {
-      // Generate a title based on current date and time
-      const now = new Date();
-      const dateStr = now.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric' 
-      });
-      const timeStr = now.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit',
-        hour12: true 
-      });
-      const chatTitle = `${dateStr} at ${timeStr}`;
+      // Get client name from user object or use default
+      const clientName = user?.name || 'Cliente';
       
-      // Create new session with date/time title
-      const newSession = await createChatSession(chatTitle);
+      // Create new session with client-based title
+      const newSession = await createChatSession(null, clientName);
       setSessions(prev => [newSession, ...prev]);
       
       // Select the new session
@@ -122,6 +116,57 @@ const Sidebar = ({
       }
     } finally {
       setDeletingSessionId(null);
+    }
+  };
+
+  const handleEditSessionTitle = (sessionId, currentTitle, e) => {
+    e.stopPropagation(); // Prevent session selection when clicking edit
+    setEditingSessionId(sessionId);
+    setEditingTitle(currentTitle);
+  };
+
+  const handleSaveSessionTitle = async (sessionId, e) => {
+    if (e) e.stopPropagation();
+    
+    if (!editingTitle.trim() || editingTitle === sessions.find(s => s.id === sessionId)?.title) {
+      setEditingSessionId(null);
+      setEditingTitle('');
+      return;
+    }
+
+    try {
+      setUpdatingSessionId(sessionId);
+      const updatedSession = await updateChatSessionName(sessionId, editingTitle.trim());
+      
+      // Update session in local state
+      setSessions(prev => prev.map(session => 
+        session.id === sessionId ? { ...session, title: updatedSession.title } : session
+      ));
+      
+      setEditingSessionId(null);
+      setEditingTitle('');
+    } catch (error) {
+      console.error('Error updating session title:', error);
+      setError('Failed to update chat title');
+      if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        onAuthRequired?.();
+      }
+    } finally {
+      setUpdatingSessionId(null);
+    }
+  };
+
+  const handleCancelEdit = (e) => {
+    if (e) e.stopPropagation();
+    setEditingSessionId(null);
+    setEditingTitle('');
+  };
+
+  const handleTitleKeyPress = (sessionId, e) => {
+    if (e.key === 'Enter') {
+      handleSaveSessionTitle(sessionId);
+    } else if (e.key === 'Escape') {
+      handleCancelEdit();
     }
   };
 
@@ -196,31 +241,90 @@ const Sidebar = ({
                     ? 'text-white'
                     : 'text-gray-300 group-hover:text-white'
                 }`}
+                disabled={editingSessionId === session.id}
               >
                 <div className="h-2 w-2 lg:h-3 lg:w-3 rounded-full mr-3 flex-shrink-0 bg-green-400"></div>
-                <span className="truncate transition-colors flex-1">
-                  {session.title}
-                </span>
-              </button>
-              
-              {/* Delete Button */}
-              <button
-                onClick={(e) => handleDeleteSession(session.id, e)}
-                disabled={deletingSessionId === session.id}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-all duration-150 disabled:opacity-50"
-                title="Delete chat session"
-              >
-                {deletingSessionId === session.id ? (
-                  <svg className="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+                {editingSessionId === session.id ? (
+                  <input
+                    type="text"
+                    value={editingTitle}
+                    onChange={(e) => setEditingTitle(e.target.value)}
+                    onKeyDown={(e) => handleTitleKeyPress(session.id, e)}
+                    onBlur={() => handleSaveSessionTitle(session.id)}
+                    className="flex-1 bg-gray-700 text-white px-2 py-1 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    autoFocus
+                    onClick={(e) => e.stopPropagation()}
+                  />
                 ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
+                  <span className="truncate transition-colors flex-1">
+                    {session.title}
+                  </span>
                 )}
               </button>
+              
+              {/* Action Buttons */}
+              {editingSessionId === session.id ? (
+                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex space-x-1">
+                  {updatingSessionId === session.id ? (
+                    <div className="p-1.5">
+                      <svg className="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={(e) => handleSaveSessionTitle(session.id, e)}
+                        className="p-1 rounded-md hover:bg-green-600 transition-all duration-150"
+                        title="Save title"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        className="p-1 rounded-md hover:bg-gray-600 transition-all duration-150"
+                        title="Cancel edit"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                  <button
+                    onClick={(e) => handleEditSessionTitle(session.id, session.title, e)}
+                    className="p-1 rounded-md hover:bg-blue-600 transition-all duration-150"
+                    title="Edit title"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={(e) => handleDeleteSession(session.id, e)}
+                    disabled={deletingSessionId === session.id}
+                    className="p-1 rounded-md hover:bg-red-600 transition-all duration-150 disabled:opacity-50"
+                    title="Delete chat session"
+                  >
+                    {deletingSessionId === session.id ? (
+                      <svg className="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

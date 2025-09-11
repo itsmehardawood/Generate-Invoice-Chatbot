@@ -1,7 +1,7 @@
 // API utility functions for FastAPI backend integration
 
-const API_BASE_URL = 'https://greengenius.crm-labloid.com';
-// const API_BASE_URL = 'http://localhost:8000';
+// const API_BASE_URL = 'https://greengenius.crm-labloid.com';
+const API_BASE_URL = 'http://localhost:8000';
 
 // Authentication helper functions
 export const getAuthHeaders = async () => {
@@ -164,13 +164,35 @@ export const signin = async (email, password) => {
 };
 
 // Chat session management
-export const createChatSession = async (title = 'New Chat') => {
+export const createChatSession = async (title = null, clientName = null) => {
   try {
     const headers = await getAuthHeaders();
+    
+    // Generate title based on client name or use provided title
+    let sessionTitle = title;
+    if (!sessionTitle) {
+      if (clientName) {
+        sessionTitle = generateChatTitle(null, clientName);
+      } else {
+        // Generate a title based on current date and time as fallback
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric' 
+        });
+        const timeStr = now.toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        });
+        sessionTitle = `${dateStr} at ${timeStr}`;
+      }
+    }
+    
     const response = await fetch(`${API_BASE_URL}/chat/sessions`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ title }),
+      body: JSON.stringify({ title: sessionTitle }),
     });
     
     const sessionData = await handleApiError(response);
@@ -247,8 +269,37 @@ export const deleteSession = async (sessionId) => {
   }
 };
 
-// Utility function to generate chat title from user query
-export const generateChatTitle = (query) => {
+// Update chat session title
+export const updateChatSessionName = async (sessionId, newTitle) => {
+  try {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/chat/sessions/${sessionId}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ title: newTitle }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || errorData.message || `Failed to update session title: ${response.status}`);
+    }
+    
+    const updatedSession = await response.json();
+    return updatedSession;
+  } catch (error) {
+    console.error('Update session title error:', error);
+    throw error;
+  }
+};
+
+// Utility function to generate chat title from user query or client name
+export const generateChatTitle = (query, clientName = null) => {
+  // If we have a client name, use the format "Preventivo per ClientName"
+  if (clientName) {
+    return `Preventivo per ${clientName}`;
+  }
+  
+  // Fallback to query-based title generation
   const words = query.split(' ').slice(0, 4); // Take first 4 words
   let title = words.join(' ');
   if (title.length > 30) {
