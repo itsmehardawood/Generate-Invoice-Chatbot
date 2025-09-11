@@ -116,9 +116,12 @@ const MessageBubble = ({
   const specialContent = renderSpecialContent();
   
   if (specialContent) {
+    // Keep invoice components within chat flow without affecting layout
     return (
-      <div className="mb-4 w-full max-w-full">
-        {specialContent}
+      <div className="flex justify-start mb-4">
+        <div className="w-full max-w-full">
+          {specialContent}
+        </div>
       </div>
     );
   }

@@ -466,7 +466,7 @@ const ExactHtmlInvoiceTemplate = ({
     setLoading(true);
     try {
       // Load the original HTML template
-      const response = await fetch("/invoice-template.html", {
+      const response = await fetch("/invoice_template.html", {
         method: 'GET',
         headers: {
           'Cache-Control': 'no-cache',
@@ -686,5 +686,7 @@ const ExactHtmlInvoiceTemplate = ({
 };
 
 export default ExactHtmlInvoiceTemplate;
+
+
 
 
