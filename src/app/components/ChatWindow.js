@@ -729,24 +729,17 @@ const ChatWindow = ({
   ];
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-800">
+    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-800 ">
       {/* Header - Only fixed on larger screens, positioned to adjust with sidebar collapse */}
-      <div className={`lg:fixed lg:top-0 lg:right-0 lg:z-40 p-3 lg:p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex items-center justify-between transition-all duration-300 ${
+      <div className={`lg:fixed lg:top-0 lg:right-0 lg:z-40 p-3 hidden lg:block lg:p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex items-center justify-between transition-all duration-300 ${
         isSidebarCollapsed ? 'lg:left-16 xl:left-20' : 'lg:left-64'
       }`}>
-        <div className="flex items-center">
+        <div className="flex items-center  ">
           {/* <div className={`h-2 w-2 lg:h-3 lg:w-3 rounded-full mr-2 lg:mr-3 ${backendConnected ? 'bg-green-500' : 'bg-red-500'}`}></div> */}
           <h2 className="text-gray-900 dark:text-white font-semibold text-sm lg:text-base">Invoice Assistant</h2>
         </div>
         <div className="flex items-center text-xs lg:text-sm">
-          {/* <span className={`px-2 py-1 rounded-full text-xs ${
-            backendConnected 
-              ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
-              : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
-          }`}>
-            <span className="hidden sm:inline">{backendConnected ? 'Online' : ' Offline'}</span>
-            <span className="sm:hidden">{backendConnected ? 'Online' : 'Offline'}</span>
-          </span> */}
+     
         </div>
       </div>
 
@@ -765,17 +758,20 @@ const ChatWindow = ({
           </div>
         ) : messages.length === 1 ? (
           /* Welcome Message */
-          <div className="flex flex-col items-center justify-center h-full pb-8 lg:pb-16 px-4">
-            <div className="mb-6 lg:mb-8 text-center max-w-md">
-              <h1 className="text-2xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2 lg:mb-4">Invoice Generator</h1>
-              <p className="text-gray-600 dark:text-gray-400 text-sm lg:text-lg mb-2">
-                AI-powered invoice creation with Python backend
-              </p>
-              <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-500">
-                Simply describe what you need to invoice and I will find matching products
-              </p>
-            </div>
-          </div>
+        <div className="flex flex-col items-center justify-center h-full pb-8 lg:pb-16 px-4">
+  <div className="mb-6 lg:mb-8 text-center max-w-md">
+    <h1 className="text-2xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2 lg:mb-4">
+      Greengenius Bot
+    </h1>
+    <p className="text-gray-600 dark:text-gray-400 text-sm lg:text-lg mb-2">
+      AI-powered assistant for smart and sustainable solutions
+    </p>
+    <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-500">
+      Just describe your request and I’ll generate optimized results instantly
+    </p>
+  </div>
+</div>
+
         ) : (
           /* Chat Messages */
           <div className="max-w-6xl mx-auto">
