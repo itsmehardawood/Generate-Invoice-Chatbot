@@ -1027,10 +1027,12 @@ Apply the instruction specifically to this ${elementType} element while maintain
               </div>
             )}
             
-            <p className="text-sm text-gray-600 mb-4">
-              Enter your instruction to apply to {selectedElements.length > 0 ? 'all selected elements' : 'selected elements'} 
-            {(e.g, "change to Rome", "make it €500", "update to 22/10/22")}  
-            </p>
+      <p className="text-sm text-gray-600 mb-4">
+  Enter your instruction to apply to {selectedElements.length > 0 ? 'all selected elements' : 'selected elements'} 
+  (e.g., &quot;change to Rome&quot;, &quot;make it €500&quot;, &quot;update to 22/10/22&quot;)
+</p>
+
+
             
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1">
